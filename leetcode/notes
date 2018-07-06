@@ -1,0 +1,18 @@
+small func
+
+strings
+	longestxxxx
+	if can't find an answer, try to walk through all chars
+	for i:0; i<len(); i++ {
+		do => str[i:]
+	}
+
+	palindrome
+		move i to next
+		0, b--, i, e++ , len(s)
+
+	rotation
+	reverse(all)
+	reverse(i:j)
+	reverse(j:k)
+
