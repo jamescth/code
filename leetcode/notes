@@ -16,3 +16,27 @@ strings
 	reverse(i:j)
 	reverse(j:k)
 
+	min
+		[]string, don't use 0 or a max value
+		default is len(s[0])
+
+array
+	pass by reference
+	array content changed if not using append to assign new address
+
+	OK => nums = append(nums[:i], nums[i+1:]
+	Not OK => nums = append([]int{}, nums...)
+
+
+	remove => swap to the next or the last
+
+fabonacci
+	f(n) = f(n-1) + f(n-2)
+	a := 1
+	b := 1
+	for i := 1; i < n; i++ {
+		a, b = b, a+b
+	}
+
+	return b
+	
