@@ -19,5 +19,4 @@ func lowestCommonAncestor(root, p, q *TreeNode) *TreeNode {
 		return lowestCommonAncestor(root.Left, p, q)
 	}
 	return root
-
 }

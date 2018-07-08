@@ -1,5 +1,9 @@
 small func
 
+Int
+	check for sign
+	check size
+
 strings
 	longestxxxx
 	if can't find an answer, try to walk through all chars
@@ -10,6 +14,13 @@ strings
 	palindrome
 		move i to next
 		0, b--, i, e++ , len(s)
+
+		005 longest palindrome
+		// b is the begin of Palindrome
+		// e is the end of Palindrome
+		// i is the middle
+		// for every loop
+		// i-b = e-i and we compare s[b], s[e]
 
 	rotation
 	reverse(all)
@@ -32,6 +43,104 @@ array
 
 	can i move both head & tail together?
 
+	033 search in rotated srted array
+	035 search insert position
+	153 Find Minimum in Rotated Sorted Array
+
+	func findMin(nums []int) int {
+		start, end := 0, len(nums)-1
+		mid := start + (end-start)/2
+		if nums[start] < nums[mid] && nums[mid] < nums[end] { // not rotated
+			return nums[start]
+		}
+
+		for start <= end {
+			if start == end {
+				return nums[start]
+			} else if start+1 == end {
+				return min(nums[start], nums[end])
+			}
+
+			mid = start + (end-start)/2
+			if nums[mid] < nums[end] { // right side is rotated
+				end = mid
+			}
+			if nums[start] < nums[mid] { // left side is rotated
+				start = mid
+			}
+		}
+		return 0 // never reaches here
+	}
+
+	func findMin(nums []int) int {
+		l, r := 0, len(nums) - 1
+		for  l < r {
+			mid := l + (r - l) / 2;
+			if nums[mid] > nums[r] { 
+				l = mid + 1
+			} else {
+				r = mid
+			}
+		}
+		return nums[l]
+	}
+
+linklist
+	partition list
+		=> new heads.
+		=> depends on condition, add element to the right head
+		=> link heads
+	sort list
+		=> merge sort
+			sortList {
+				secH := split()
+				merger(sortList(head), sortList(secH))
+
+	convert sorted list to bst
+		=> convert to array
+		=> convert array to bst
+			bst() {
+			check for nil
+			mid = len(nums)/2
+			return &TreeNode {
+			Val: nums[mid],
+			Left: bst(nums[:mid]),
+			RIght: bst(nums[mid+1:]),
+			}
+
+	reverse linkedlist
+		p
+		for head != nil {
+			tmp := head.Next
+			head.Next = p
+			p = head
+			head = tmp
+			}
+
+	061 rotate list
+
+	160 Intersection of two linkedlists
+		func getIntersectionNode(headA, headB *ListNode) *ListNode {
+			len_a, len_b := getLength(headA, headB)
+
+			if len_a > len_b {
+				headA = headA.Next
+				lea_a--
+			} else if len_a < len_b {
+				headB = headB.Next
+				len_b--
+			}
+
+			// len_a == len_b
+			for headA != nil && headB != nil {
+				if headA == headB {
+				return headA
+				}
+				headA, headB = headA.Next, headB.Next
+			}
+			return nil
+		}
+
 fabonacci
 	f(n) = f(n-1) + f(n-2)
 	a := 1
@@ -41,7 +150,38 @@ fabonacci
 	}
 
 	return b
-	
+
+BST 
+	278 first bad version
+	lowest common ancestor bst
+	101 Symmetric Tree
+	103 Binary Tree ZigZag order
+	104 Minimux depth of binary tree
+	110 Balanced Binary Tree
+
+	235 Lowest common ancestor of a binary search tree
+		func lowestCommonAncestor(root, p, q *TreeNode) *TreeNode {
+			if root == nil {
+				return nil
+			}
+
+			if p.Val == root.Val {
+				return p
+			}
+			if q.Val == root.Val {
+				return q
+			}
+
+			if p.Val > root.Val && q.Val > root.Val {
+				return lowestCommonAncestor(root.Right, p, q)
+			}
+			if p.Val < root.Val && q.Val < root.Val {
+				return lowestCommonAncestor(root.Left, p, q)
+			}
+			return root
+		}
+	236 Lowest common ancestor of a binary tree
+
 check cycle
 	if no pointer, create a func <= 202
 

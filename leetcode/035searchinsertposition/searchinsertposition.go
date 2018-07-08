@@ -1,6 +1,25 @@
 package main
 
 func searchInsert(nums []int, target int) int {
+	low, high := 0, len(nums)-1
+
+	for low <= high {
+		mid := (low + high) / 2
+
+		switch {
+		case nums[mid] == target:
+			return mid
+		case nums[mid] > target:
+			high = mid - 1
+		case nums[mid] < target:
+			low = mid + 1
+		}
+	}
+	return low
+}
+
+/*
+func searchInsert(nums []int, target int) int {
 	l := len(nums)
 	if l == 0 {
 		return 0
@@ -24,3 +43,4 @@ func searchInsert(nums []int, target int) int {
 	// non-reachable
 	return 0
 }
+*/
