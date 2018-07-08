@@ -30,6 +30,8 @@ array
 
 	remove => swap to the next or the last
 
+	can i move both head & tail together?
+
 fabonacci
 	f(n) = f(n-1) + f(n-2)
 	a := 1
@@ -40,3 +42,14 @@ fabonacci
 
 	return b
 	
+check cycle
+	if no pointer, create a func <= 202
+
+graph
+	number of island
+
+set
+	subsets
+
+DP
+	204 countprimes
