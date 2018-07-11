@@ -3,6 +3,7 @@ BIOS
 2. Finds boot sector from the device (MBR master boot recode).
 3. BIOS hands over the control to bootloader
 
+************************************************************************
 GRUP2
 1. boot.img, diskboot.img > contains GRUB2's kernel and drivers for 
    handling fs into memory.
@@ -19,5 +20,235 @@ X+08000  +------------------------+
        X +------------------------+
          | Boot loader            | <- Boot sector entry point 0x7C00
 
+************************************************************************
 The beginning of the kernel setup
+Aligning the Segment Registers
+Stack Setup
+
+ +------------------------+ <- esp : _end + STACK_SIZE
+ | Stack                  |
+ +------------------------+ <- end
+ | Kernel setup           |
+ | Kernel boot sector     |
+ +------------------------+ <- %ss - 0x10000
+
+BSS Setup (Basic Service Set) for C code
+
+ +------------------------+ <- _end
+ | BSS section            |
+ +------------------------+ <- _bss_start
+ | Kernel setup           |
+ | Kernel boot sector     |
+ +------------------------+ <- %ss - 0x10000
+
+Jump to main
+
+************************************************************************
+Protected Mode
+	real mode -> 1 Mb
+	Protected mode -> 4 Gb
+
+	Segmentation
+	Paging
+
+	GDT (Global Descriptor Table) => GDTR
+
+	. Disable Interrupts
+	. Describe and load the GDT w/ the lgdt instruction
+	. Set the PE (Protection Enable) bit in CR0
+	. Jump to protected mode code
+
+Copying boot parameters into the "zeropage"
+Console initialization
+Heap initialization
+CPU validation
+Memory detection
+	provides a map of available RAM to the CPU
+Keyboard initialization
+Querying
+************************************************************************
+
+Video mode initialization and transition to protected mode
+setup video mode
+last preparation before transition into protected mode
+	realmode_switch_hook
+	disable external interrupts
+	disable NMI
+	enable A20 gate
+	reset_coprocessor
+	mask_all_interrupts
+
+Set up the interrupt descriptor table
+Set up Global Descriptor Table
+Actual transition into protected mode
+	protected_mode_jump()
+
+************************************************************************
+Transition to 64-bit mode
+
+32-bit entry point
+	ENTRY(startup_32)
+	....
+	....
+	....
+	ENDPROC(startup_32)
+
+Reload the segments if needed
+
+Stack setup and CPU verification
+
+Calculate relocation address
+
+preparation before entering long mode
+
+Long mode
+
+Early page table initialization
+
+Transition to the 64-bit mode
+************************************************************************
+Kernel decompression
+
+Preparation before kernel decompression
+
+Last preparation before kernel decompression
+
+kernel decompression
+
+************************************************************************
+Initialization of page tables
+
+Avoids reserved memory ranges
+
+Physical address randomization
+
+Virtual address randomization
+
+************************************************************************
+Initialization
+
+First steps in the kernel code
+
+Fix base addresses of page tables
+
+Identity mapping setup
+
+Last preparation before jump at the kernel entry point
+
+Next to start_kernel
+************************************************************************
+Early interrupt and exception handling
+	0-31 exceptions
+	32-255 user-defined interrupts
+
+Fill and load IDT
+
+Early interrupts handlers
+
+Page fault handling
+************************************************************************
+Last preparations before the kernel entry point
+
+boot_params again
+
+Move on init pages
+
+	init_level4_pgt > maps first 2 gigabytes and 512 megabytes for the kernel code, data and bss
+
+Last step before kernel entry point
+	copy_bootdata(real_mode_data)
+	reserve_ebda_region
+
+First touch of the linux kernel memory manager framework
+	. physical base addess of the memory region
+	. size of the memory region
+	. maximum number of numa nodes
+	. flags
+************************************************************************
+Kernel entry point
+
+First steps in the start_kernel
+	struct task_struct init_task = INIT_TASK(init_task);
+
+The first processor activation
+	boot_cpu_init
+
+Print Linux banner
+
+Architecture-dependent parts of initialization
+
+Reserve memory for initrd
+************************************************************************
+Continue of architecture-specific initialization
+
+DB handler / debug handler
+
+Early ioremap initialization
+
+Obtaining major and minor numbers for the root device
+
+Memory map setup
+
+Copying of the BIOS Enhanced Disk Device information
+
+Memory descriptor initialization
+	#define INIT_TASK(tsk)  \
+	{
+	    ...
+	    ...
+	    ...
+	    .mm = NULL,         \
+	    .active_mm  = &init_mm, \
+	    ...
+	}
+
+************************************************************************
+Architecture-specific initialization, again...
+
+Early PCI dump
+Finish with memory parsing
+DMI scaning (Desktop Management interface)
+SMP config
+Additional early memory initialization routines
+
+************************************************************************
+The End of the architecture-specific initialization, almost...
+
+Allocate area for DMA
+Initialization of the sparse memory
+vsyscall mapping
+Getting the SMP configuration
+The rest of the setup_arch
+	init_apic_mappings
+		DMA, TIMER, FPU ...
+Back to the main.c
+************************************************************************
+Scheduler initialization
+
+Build zonelists
+The rest of the stuff before scheduler initialization
+PID hash initialization
+Scheduler initialization
+************************************************************************
+RCU initialization
+
+Initialization of the integer ID management
+RCU initialization
+Rest of the initialization process
+	early_irq_init
+	init_IRQ
+	softirq_init
+
+	local_irq_enable
+
+************************************************************************
+End of the linux kernel initialization process
+	acpi_early_init 
+	init_espfix_bsp
+	thread_info_cache_init
+
+Allocating cache for init task
+Initialization of the caches
+Creation of the root for the procfs
+First steps after the start_kernel
 

@@ -1,0 +1,7 @@
+https://brandonwamboldt.ca/how-linux-pipes-work-under-the-hood-1518/
+
+. Linux has VFS module called pipefs gets mounted in kernel space during boot
+. pipefs is mounted alongside the root file system (/) not in it
+. pipefs cannot be directly examined by the user unlike most file systems
+. the entry point to pipefs is the pipe(2) syscall
+. The pipe(2) syscall is used by 
