@@ -1,8 +1,15 @@
-small func
+1. small func
+2. fmt.Printf
+3. for any slice, array, the min is a[0]??
+
 
 Int
 	check for sign
 	check size math.MaxInt32??
+
+Sort	
+	sort.Ints(a []int)
+	sort.Strings(a []string)
 
 strings
 	longestxxxx
@@ -45,8 +52,10 @@ array
 
 	033 search in rotated srted array
 	035 search insert position
+	053 Maximum Subarray
 	153 Find Minimum in Rotated Sorted Array
 
+	Binary search
 	func findMin(nums []int) int {
 		start, end := 0, len(nums)-1
 		mid := start + (end-start)/2
@@ -72,6 +81,7 @@ array
 		return 0 // never reaches here
 	}
 
+	O(n)
 	func findMin(nums []int) int {
 		l, r := 0, len(nums) - 1
 		for  l < r {

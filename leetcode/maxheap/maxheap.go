@@ -26,8 +26,7 @@ func (h *IntHeap) Pop() interface{} {
 func maxHeap(nums IntHeap) int {
 	var ret int
 
-	temp := nums
-	h := &temp
+	h := &nums
 	heap.Init(h)
 	heap.Push(h, 3)
 	ret = (*h)[0]

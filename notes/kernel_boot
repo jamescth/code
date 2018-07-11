@@ -1,0 +1,23 @@
+BIOS
+1. BIOS start, initialing and checking HW. find a bootable device.
+2. Finds boot sector from the device (MBR master boot recode).
+3. BIOS hands over the control to bootloader
+
+GRUP2
+1. boot.img, diskboot.img > contains GRUB2's kernel and drivers for 
+   handling fs into memory.
+2. initialize console, get the base address, sets the root device,
+   loads/parses the grub configuration 
+3. the bootloader read and fill some fields of the kernel setup header
+   transfers control to the kernel
+
+X+10000  +------------------------+
+         | Stack/heap             | For use by the kernel real-mode code.
+X+08000  +------------------------+
+         | Kernel setup           | The kernel real-mode code.
+         | Kernel boot sector     | The kernel legacy boot sector.
+       X +------------------------+
+         | Boot loader            | <- Boot sector entry point 0x7C00
+
+The beginning of the kernel setup
+

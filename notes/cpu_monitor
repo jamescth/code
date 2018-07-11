@@ -1,0 +1,164 @@
+test cases
+https://access.redhat.com/solutions/1160343
+
+$ top
+top - 07:40:45 up 35 min,  1 user,  load average: 0.94, 0.50, 0.20
+Tasks: 223 total,   1 running, 185 sleeping,   0 stopped,   0 zombie
+%Cpu(s):  3.1 us,  1.1 sy,  0.8 ni, 94.8 id,  0.2 wa,  0.0 hi,  0.1 si,  0.0 st
+KiB Mem :  7652740 total,  5406476 free,  1181488 used,  1064776 buff/cache
+KiB Swap:  2097148 total,  2097148 free,        0 used.  6195600 avail Mem 
+
+  PID USER      PR  NI    VIRT    RES    SHR S  %CPU %MEM     TIME+ COMMAND     
+ 1418 james     20   0 3543748 353280  94536 S  22.2  4.6   0:36.73 gnome-shell 
+ 1230 james     20   0  672936 120660  56844 S   5.6  1.6   0:07.74 Xorg        
+ 5230 james     20   0   49016   3756   3148 R   5.6  0.0   0:00.02 top         
+    1 root      20   0  159852   9260   6792 S   0.0  0.1   0:02.66 systemd     
+    2 root      20   0       0      0      0 S   0.0  0.0   0:00.00 kthreadd    
+
+ load / nproc
+ us : user space work load
+ sy : system work load
+ ni : nice
+ id : idle
+ wa : i/o wait
+ hi : hardware irq #
+ si : software irq #
+ st : steal time
+
+$ vmstat 1
+procs -----------memory---------- ---swap-- -----io---- -system-- ------cpu-----
+ r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st
+ 1  0      0 5247864 139180 1087468    0    0   183   153   98  240  4  1 94  0  0
+ 0  0      0 5247872 139180 1087504    0    0     0     0  126  460  3  1 97  0  0
+ 1  0      0 5247944 139180 1087504    0    0     0     0  432 1484 15  3 82  0  0
+ 0  0      0 5247616 139180 1087504    0    0     0     0  668 1845 23  3 75  0  0
+ 1  0      0 5247616 139180 1087504    0    0     0     0  585 1491 18  2 80  0  0
+ 0  0      0 5247492 139180 1087504    0    0     0     0  581 1832 14  1 85  1  0
+
+r : # of procs waiting for run time
+b : # of procs in uninterruptible sleep
+
+swpd : # blocks are swapped to disk (paged). Total Virtual memory usage
+free : # of idle memory
+buff : # of memory used as buff. (file system metadata)
+cache : # of memory used as cache (pages w/ actual contents of files or block devices)
+inact : # of inactive memory
+active : # of active memory
+
+si : # memory swapped in
+so : # memory swapped out
+
+bi : # blocks read
+bo : # blocks write
+
+in : # interrupts / sec
+cs : # context switches / sec
+
+us : time spent in user 
+sy : time spent in kernel
+id : idle
+wa : I/O wait time
+st : steal time
+
+$ vmstat -s
+      7652740 K total memory
+      1213896 K used memory
+      1646388 K active memory
+       532916 K inactive memory
+
+active memory are pages which have been accessed "recently"
+inactive memory are pages which have not been accessed "recently"
+
+$ free
+              total        used        free      shared  buff/cache   available
+Mem:        7652740     1175772     5250220       28760     1226748     6169688
+Swap:       2097148           0     2097148
+
+Example:
+
+# free -m
+         total      used     free   shared     buffers     cached
+Mem:      4049      3982       67        0          16       3530
+-/+ buffers/cache:   435     3614
+Swap:     6142        53     6088
+
+In addition to the memory that is actually being USED by the kernel and processes resident in memory - Linux also reserves memory to allocate to processes as 'buffers' AND uses pretty much any left over memory to hold "cached" files.
+Looking only at the top line...
+total = all memory in the system (4GB on this server)
+used = all memory currently in use/reserved by running processes and the OS
+free = total - used
+shared = memory being shared by multiple processes (deprecated?)
+buffers = memory reserved by the OS to alloc as buffers when process need them (aka the 'heap')
+cached = recently used files being stored in ram (THANK YOU LINUX!)
+
+free buffer cache
+$ free && sync && echo 3 > /proc/sys/vm/drop_caches && free
+To free pagecache:
+# echo 1 > /proc/sys/vm/drop_caches
+To free dentries and inodes:
+# echo 2 > /proc/sys/vm/drop_caches
+To free pagecache, dentries and inodes:
+# echo 3 > /proc/sys/vm/drop_caches
+
+CPU affinity
+[root@www ~]# taskset -c -p 6389
+pid 6389's current affinity list: 0-7
+[root@www ~]# taskset -c -p 6580
+pid 6580's current affinity list: 0-7
+
+https://www.kernel.org/doc/Documentation/filesystems/proc.txt
+$ cat /proc/interrupts 
+           CPU0       CPU1       
+  0:         45          0   IO-APIC   2-edge      timer
+  1:       3310          0   IO-APIC   1-edge      i8042
+  8:          0          0   IO-APIC   8-edge      rtc0
+  9:          0          0   IO-APIC   9-fasteoi   acpi
+ 12:          0       1640   IO-APIC  12-edge      i8042
+ 14:          0          0   IO-APIC  14-edge      ata_piix
+ 15:          0       9868   IO-APIC  15-edge      ata_piix
+ 18:         15          0   IO-APIC  18-fasteoi   vboxvideo
+ 19:          0      45152   IO-APIC  19-fasteoi   enp0s3
+ 20:          0      18758   IO-APIC  20-fasteoi   vboxguest
+ 21:      43278          0   IO-APIC  21-fasteoi   ahci[0000:00:0d.0], snd_intel8x0
+ 22:         26          0   IO-APIC  22-fasteoi   ohci_hcd:usb1
+NMI:          0          0   Non-maskable interrupts
+LOC:     474869     593404   Local timer interrupts
+SPU:          0          0   Spurious interrupts
+PMI:          0          0   Performance monitoring interrupts
+IWI:          0          0   IRQ work interrupts
+RTR:          0          0   APIC ICR read retries
+RES:     418572     395302   Rescheduling interrupts
+CAL:       7764      23092   Function call interrupts
+TLB:       1359       1077   TLB shootdowns
+TRM:          0          0   Thermal event interrupts
+THR:          0          0   Threshold APIC interrupts
+DFR:          0          0   Deferred Error APIC interrupts
+MCE:          0          0   Machine check exceptions
+MCP:         32         32   Machine check polls
+HYP:          0          0   Hypervisor callback interrupts
+ERR:          0
+MIS:          0
+PIN:          0          0   Posted-interrupt notification event
+NPI:          0          0   Nested posted-interrupt event
+PIW:          0          0   Posted-interrupt wakeup event
+
+$ cat /proc/stat 
+cpu  167752 3882 23476 1771295 1037 0 864 0 0 0
+cpu0 82196 1202 12145 887171 580 0 553 0 0 0
+cpu1 85556 2679 11331 884124 456 0 311 0 0 0
+intr 2085852 45 3484 0 0 0 0 0 0 0 0 0 0 1732 0 0 10046 0 0 15 45465 20117 44359 26 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ctxt 8575366
+btime 1531317908
+processes 6806
+procs_running 1
+procs_blocked 0
+softirq 1201807 4 573175 1973 45837 44235 0 3337 357073 0 176173
+
+cpu:
+1 : user
+2 : nice
+3 : system
+4 : idle
+5 : iowait
+6 : irq
+7 : softirq

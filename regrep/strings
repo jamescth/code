@@ -1,0 +1,26 @@
+http://bigocheatsheet.com/
+
+hash table
+Search		 O(1)	Insert	O(1)
+Algorithm	Average	Space	O(n)
+
+Array Sorting Algorithms
+Algorithm	Time Complexity
+Best	Worst
+Quicksort	Ω(n log(n))	O(n^2)
+Mergesort	Ω(n log(n))	O(n log(n))
+Timsort	Ω(n)	O(n log(n))
+
+128 bits vs. 32
+fe80:0000:0000:0000:0204:61ff:fe9d:f156 // full form of IPv6
+fe80:0:0:0:204:61ff:fe9d:f156 // drop leading zeroes
+fe80::204:61ff:fe9d:f156 // collapse multiple zeroes to :: in the IPv6 address
+fe80:0000:0000:0000:0204:61ff:254.157.241.86 // IPv4 dotted quad at the end
+fe80:0:0:0:0204:61ff:254.157.241.86 // drop leading zeroes, IPv4 dotted quad at the end
+fe80::204:61ff:254.157.241.86 // dotted quad at the end, multiple zeroes collapsed
+
+In addition, the regular expression matches these IPv6 forms:
+
+::1 // localhost
+fe80:: // link-local prefix
+2001:: // global unicast prefix

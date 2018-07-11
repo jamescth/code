@@ -12,7 +12,7 @@ func linkedlistCycle(head *ListNode) bool {
 	slow := head
 	fast := head.Next.Next
 
-	for fast != nil && fast.Next != nil {
+	for slow != fast && fast != nil && fast.Next != nil {
 		slow = slow.Next
 		fast = fast.Next.Next
 	}
