@@ -1,0 +1,134 @@
+Introduction
+	A system call is just a userspace request of a kernel service
+
+	an a.out assembly for x86_64 will have 2 sections:
+	. data - stores initialized data
+	. text - contains the code of program
+
+	he syscall instruction jumps to the address stored in the 
+	MSR_LSTAR Model specific register (Long system target 
+	address register). The kernel is responsible for providing
+	its own custom function for handling syscalls as well as
+	writing the address of this handler function to the
+	MSR_LSTAR register upon system startup.
+
+	SYSCALL_DEFINE3(write, unsigned int, fd, const char __user *, buf,
+	        size_t, count)
+	{
+	    ...
+	    ...
+	    ...
+	}
+
+	rdi rsi rdx rcx r8 r9
+
+Implementation of write system call
+************************************************************************
+How does the linux kernel handle a system call
+
+Initialization of the system calls table
+	asmlinkage const sys_call_ptr_t sys_call_table[__NR_syscall_max+1] = {
+	    [0 ... __NR_syscall_max] = &sys_ni_syscall,
+	    #include <asm/syscalls_64.h>
+	};
+
+	__SYSCALL_COMMON(0, sys_read, sys_read)
+	__SYSCALL_COMMON(1, sys_write, sys_write)
+	__SYSCALL_COMMON(2, sys_open, sys_open)
+	__SYSCALL_COMMON(3, sys_close, sys_close)
+	__SYSCALL_COMMON(5, sys_newfstat, sys_newfstat)
+
+Initialization of the system call entry
+
+Preparation before system handler will be called
+	NABLE_INTERRUPTS(CLBR_NONE)
+
+	pushq    %r11
+	pushq    $__USER_CS
+	pushq    %rcx
+	pushq    %rax
+	pushq    %rdi
+	pushq    %rsi
+	pushq    %rdx
+	pushq    %rcx
+	pushq    $-ENOSYS
+	pushq    %r8
+	pushq    %r9
+	pushq    %r10
+	pushq    %r11
+	sub    $(6*8), %rsp
+
+	rax - contains system call number;
+	rcx - contains return address to the user space;
+	r11 - contains register flags;
+	rdi - contains first argument of a system call handler;
+	rsi - contains second argument of a system call handler;
+	rdx - contains third argument of a system call handler;
+	r10 - contains fourth argument of a system call handler;
+	r8 - contains fifth argument of a system call handler;
+	r9 - contains sixth argument of a system call handler;
+
+Exit from a system call
+	a system call returns the result to the user program in the general purpose rax register
+
+************************************************************************
+vsyscalls and vDSO
+	syscall and vdso are designed to speed up are designed to speed certain syscalls
+
+Introduction to vsyscalls
+	The Linux kernel maps into user space a page that contains some variables
+	and the implementation of some system calls. 
+
+	~$ sudo cat /proc/1/maps | grep vsyscall
+	ffffffffff600000-ffffffffff601000 r-xp 00000000 00:00 0                  [vsyscall]
+
+	these system calls will be executed in userspace w/out context switching
+
+	Problem:
+	Virtual system calls have fixed addresses
+
+Introduction vDSO
+	The main difference between the vsyscall and vDSO mechanisms is that
+	vDSO maps memory pages into each process in a shared object form,
+	but vsyscall is static in memory and has the same address every time.
+
+	$ ldd /bin/uname
+		linux-vdso.so.1 (0x00007ffcc49f9000)
+		libc.so.6 => /lib/x86_64-linux-gnu/libc.so.6 (0x00007f3168068000)
+		/lib64/ld-linux-x86-64.so.2 (0x00007f3168662000)
+	$ sudo cat /proc/1/maps | grep vdso
+	7ffcecb58000-7ffcecb5a000 r-xp 00000000 00:00 0                          [vdso]
+************************************************************************
+How does the Linux kernel run a program
+
+	bash:
+	. checks and tries to open /dev/tty
+	. checks that shell running in debug mode
+	. parses command line arguments
+	. reads shell environments
+	. load .bashrc, .profile and other configuration files
+	. ...
+	in the end, the shell_execve calls execvc()
+
+	int execve(const char *filename, char *const argv [], char *const envp[]);
+
+execve system call
+	SYSCALL_DEFINE3(execve,
+	        const char __user *, filename,
+	        const char __user *const __user *, argv,
+	        const char __user *const __user *, envp)
+	{
+	    return do_execve(getname(filename), argv, envp);
+	}
+
+	loading mm ...
+
+************************************************************************
+How does the open system call work
+	$ sudo ls /proc/1/fd
+	0    15   224  236  245  254  263  272	281  290  3
+	308  317  326  335  344	353  362  373  383  393  6
+
+	$ sudo ls -l /proc/1/fd/224
+	lrwx------ 1 root root 64 Jul 11 09:51 /proc/1/fd/224 -> 'socket:[27898]'
+

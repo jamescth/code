@@ -202,7 +202,33 @@ graph
 	695 max area of island/
 
 set
-	subsets
+	subsets 
+	[1, 2] => {}, {1,2}, {1}, {2}; 2^n = 4
+			{}
+		{}	{2}
+	{}
+		{1}	{1}
+			{1,2}
+
+	func all_subsets(nums []int) [][]int {
+		subset := [][]int{}
+		recur(nums, []int{}, &subset)
+		return subset
+	}
+
+	func recur(nums, tmp []int, ret *[][]int) {
+		l := len(nums)
+		if l == 0 {
+			sort.Ints(tmp)
+			// or print sets
+			*ret = append(*ret, tmp)
+			return
+		}
+
+		recur(nums[:l-1], tmp, ret)
+
+		recur(nums[:l-1], append([]int{nums[l-1]}, tmp...), ret)
+	}
 
 DP
 	204 countprimes

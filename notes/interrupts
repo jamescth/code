@@ -1,0 +1,216 @@
+What is an interrupt?
+	An interrupt is an event raised by software or hardware when it needs the CPU's attention.
+
+	Local APIC - located on each CPU
+	I/O APIC - multi-processor interrupt management
+
+	Steps:
+	kernel must puase execution of the current process
+	kernel must search for the handler of the interrupt and transfer control
+	After the interrupt handler completes execution, the interrupted process resume
+
+	Interrupt Descriptor Table (IDT)
+
+************************************************************************
+Start to dive into interrupt and execeptions handling in the Linux kernel
+
+Setting stack canary for the interrupt stack
+	boot_init_stack_canary - sets the canary value to protect interrupt stack overflow
+
+DIsabling/Enabling local interrupts
+	local_irq_disable()
+	local_irq_enable()
+
+	if CONFIG_DEBUG_LOCKDEP kernel configuration is set, try 
+	$ sudo cat /proc/lockdep
+	 hardirq on events:             12838248974
+	 hardirq off events:            12838248979
+	 redundant hardirq ons:               67792
+	 redundant hardirq offs:         3836339146
+	 softirq on events:                38002159
+	 softirq off events:               38002187
+	 redundant softirq ons:                   0
+	 redundant softirq offs:                  0
+
+Early trap initialization during kernel initialization
+	set_intr_gate_ist
+	set_system_intr_gate_ist
+	set_intr_gate
+
+************************************************************************
+Exception Handling
+	#DB - debug exception, transfers control from the interrupted process to the debug handler;
+	#BP - breakpoint exception, caused by the int 3 instruction.
+
+Debug and Breakpoint exceptions
+	Debug registers are special registers that were presented in x86 processors
+
+	Debug registers may be accessed only in the privileged mode and an attempt
+	to read or write the debug registers when executing at any other privilege
+	level causes a general protection fault exception.
+
+	#BP exception may occur in userspace.
+
+Preparation before an exception handler
+
+An exception occured in userspace
+
+An exception w/ paranoid > 0 occurred in kernel space
+	use the slow way
+
+Exit from an exception handler
+
+************************************************************************
+Initialization of non-early interrupt gats
+
+Early page fault handler
+	early_trap_pf_init()
+		set_intr_gate()
+		- vector # of a interrupt
+		- address of an interrupt handler
+
+Back to start_kernel
+	use early_ioremap() to map I/O memory on the page tables
+
+************************************************************************
+implementation of exception handlers
+	DO_ERROR(X86_TRAP_DE,     SIGFPE,  "divide error",                divide_error)
+	DO_ERROR(X86_TRAP_OF,     SIGSEGV, "overflow",                    overflow)
+	DO_ERROR(X86_TRAP_UD,     SIGILL,  "invalid opcode",              invalid_op)
+	DO_ERROR(X86_TRAP_OLD_MF, SIGFPE,  "coprocessor segment overrun", coprocessor_segment_overrun)
+	DO_ERROR(X86_TRAP_TS,     SIGSEGV, "invalid TSS",                 invalid_TSS)
+	DO_ERROR(X86_TRAP_NP,     SIGBUS,  "segment not present",         segment_not_present)
+	DO_ERROR(X86_TRAP_SS,     SIGBUS,  "stack segment",               stack_segment)
+	DO_ERROR(X86_TRAP_AC,     SIGBUS,  "alignment check",             alignment_check)
+
+Trap handlers
+
+Double fault
+
+Device not available exception handler
+
+General protection fault exception handler
+************************************************************************
+Non-maskable interrupt handler
+	A Non-Maskable interrupt is a hardware interrupt that cannot be ignored by standard masking techniques.
+
+Range Exceeded Exception
+
+Coprocessor exception and SIMD exception
+************************************************************************
+Introduction to external interrupts
+	Interrupts are signal that are sent across IRQ or Interrupt Request Line by a hardware or software
+
+	External interrupt handling depends on the type of an interrupt:
+	I/O interrupts
+		a handler of an I/O interrupt must be flexible to service several devices at the same time
+		
+		steps:
+		1. save the IRQ value and register's contents on the kernel stack
+		2. send acknowledgement to the hw controller which servicing the IRQ line
+		3. execute the interrupt service routne (ISR) which is associated w/ the device
+		4. restore registers and return from an interrupt
+
+	Timer interrupts;
+	Interprocessor interrupts.
+
+Early external interrupts initialization
+
+Sparse IRQs
+************************************************************************
+Non-early intialization of the IRQs
+	DEFINE_PER_CPU(vector_irq_t, vector_irq) = {
+	         [0 ... NR_VECTORS - 1] = -1,
+	};
+
+	$ cat /proc/interrupts 
+	           CPU0       CPU1       
+	  0:         45          0   IO-APIC   2-edge      timer
+	  1:      29237          0   IO-APIC   1-edge      i8042
+	  8:          0          0   IO-APIC   8-edge      rtc0
+	  9:          0          0   IO-APIC   9-fasteoi   acpi
+	 12:          0       9096   IO-APIC  12-edge      i8042
+	 14:          0          0   IO-APIC  14-edge      ata_piix
+	 15:          0      46736   IO-APIC  15-edge      ata_piix
+	 18:         43          0   IO-APIC  18-fasteoi   vboxvideo
+	 19:          0      72269   IO-APIC  19-fasteoi   enp0s3
+	 20:          0     110291   IO-APIC  20-fasteoi   vboxguest
+	 21:      69123          0   IO-APIC  21-fasteoi   ahci[0000:00:0d.0], snd_intel8x0
+	 22:         26          0   IO-APIC  22-fasteoi   ohci_hcd:usb1
+	NMI:          0          0   Non-maskable interrupts
+	LOC:    1994311    2699204   Local timer interrupts
+************************************************************************
+Introduction of deferred interrupts (Softirq, Tasklets and Workqueues)
+	Handle of an interrupt must execute quickly
+	sometime an interrupt handler must do a large amount of work
+
+	Top half
+	Bottom half
+
+	Processing an interrupt can be split on two diferent parts
+	1. the main handler does only minimal and the most important job.
+	2. schedules the 2nd part and finishes its work
+
+	3 types of deferred interrupts
+	softirqs
+	tasklets
+	workqueues
+
+Softirqs
+	all new schemes of implementation of the bottom half handlers are
+	built on the performance of the processor specific kernel thread
+	that called ksoftirqd. Each CPU has its own thread called ksoftirq/n
+
+	$ systemd-cgls -k | grep ksoft
+	├─   3 [ksoftirqd/0]
+	├─  13 [ksoftirqd/1]
+	├─  18 [ksoftirqd/2]
+	├─  23 [ksoftirqd/3]
+
+	~$ cat /proc/softirqs 
+	                    CPU0       CPU1
+	          HI:          5          0
+	       TIMER:     332519     310498
+	      NET_TX:       2320          0
+	      NET_RX:     270221        225
+	       BLOCK:     134282         32
+	BLOCK_IOPOLL:          0          0
+
+Tasklets
+	The preferable way to implement deferrable functions are tasklets
+
+	tasklets are softirqs that can be allocated and initialized at
+	runtime and unlike softirqs, tasklets that have the same type
+	cannot be run on multiple processors at a time
+
+Workqueues
+	Workqueue functions run in the context of a kernel process,
+	but tasklet functions run in the software interrupt context.
+
+	$ systemd-cgls -k | grep kworker
+	├─    4 [kworker/0:0H]
+	├─   18 [kworker/1:0H]
+	├─  163 [kworker/0:1H]
+	├─  164 [kworker/1:1H]
+	├─ 5751 [kworker/0:3]
+	├─10140 [kworker/1:0]
+	├─10148 [kworker/u4:0]
+	├─10173 [kworker/1:2]
+************************************************************************
+Initialization of a kernel module
+	module_init
+	module_exit
+
+Requesting irq line
+
+Prepare to handle an interrupt
+
+Exit from interrupt
+************************************************************************
+lsmod
+insmod <path/xxx.ko>
+rmmod <path/xxx.ko>
+
+insert using modprobe
+modprobe <whatever>
+modprobe -r <whatever>
