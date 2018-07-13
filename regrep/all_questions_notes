@@ -230,5 +230,7 @@ set
 		recur(nums[:l-1], append([]int{nums[l-1]}, tmp...), ret)
 	}
 
+	560 subarry-sum-equals-k
+
 DP
 	204 countprimes

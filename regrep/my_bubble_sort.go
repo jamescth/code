@@ -9,8 +9,8 @@ func bubble_sort(nums []int) {
 		}
 
 		for i := 0; i < len(nums)-1; i++ {
-			if nums[x] > x[x+1] {
-				nums[x], nums[x+1] = nums[x+1], nums[x]
+			if nums[i] > nums[i+1] {
+				nums[i], nums[i+1] = nums[i+1], nums[i]
 			}
 		}
 		end--
