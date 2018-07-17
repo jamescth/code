@@ -22,6 +22,11 @@ X+08000  +------------------------+
 
 ************************************************************************
 The beginning of the kernel setup
+
+Finally, we are in the kernel! Technically, the kernel hasn't run yet;
+first, the kernel setup part must configure stuff such as the
+decompressor and some memory management related things, to name a few.
+
 Aligning the Segment Registers
 Stack Setup
 
@@ -33,6 +38,7 @@ Stack Setup
  +------------------------+ <- %ss - 0x10000
 
 BSS Setup (Basic Service Set) for C code
+That's all - we have the stack and BSS, so we can jump to the main() C function:
 
  +------------------------+ <- _end
  | BSS section            |
@@ -45,8 +51,12 @@ Jump to main
 
 ************************************************************************
 Protected Mode
-	real mode -> 1 Mb
-	Protected mode -> 4 Gb
+
+Before we can move to the native Intel64 Long Mode, the kernel
+must switch the CPU into protected mode.
+
+	real mode -> 2^20 1 Mb
+	Protected mode -> 2^32 4 Gb
 
 	Segmentation
 	Paging
@@ -59,9 +69,21 @@ Protected Mode
 	. Jump to protected mode code
 
 Copying boot parameters into the "zeropage"
+
+We will start from the main routine in "main.c". The first
+function which is called in main is copy_boot_params(void).
+It copies the kernel setup header into the corresponding
+field of the boot_params structure
+
 Console initialization
+	console_init()
+
 Heap initialization
+	init_heap()
+
 CPU validation
+	validate_cpu()
+
 Memory detection
 	provides a map of available RAM to the CPU
 Keyboard initialization
@@ -79,12 +101,21 @@ last preparation before transition into protected mode
 	mask_all_interrupts
 
 Set up the interrupt descriptor table
+	set up the Interrupt Descriptor table (IDT) in the setup_idt function
+
 Set up Global Descriptor Table
+	setup of the Global Descriptor Table (GDT). We can see the setup_gdt
+	function which sets up the GDT 
+
 Actual transition into protected mode
 	protected_mode_jump()
 
+	address of the protected mode entry point
+	address of boot_params
+
 ************************************************************************
 Transition to 64-bit mode
+	When using bzImage, the protected-mode kernel was relocated to 0x100000
 
 32-bit entry point
 	ENTRY(startup_32)
@@ -93,34 +124,84 @@ Transition to 64-bit mode
 	....
 	ENDPROC(startup_32)
 
+	Actually bzimage is a gzipped vmlinux + header + kernel setup code
+
 Reload the segments if needed
+
+startup_32 (0x0)     +-----------------------+
+                     |                       |
+                     |                       |
+                     |                       |
+                     |                       |
+                     |                       |
+                     |                       |
+                     |                       |
+                     |                       |
+1f (0x0 + 1f offset) +-----------------------+ %ebp - real physical address
+                     |                       |
+                     |                       |
+                     +-----------------------+
 
 Stack setup and CPU verification
 
 Calculate relocation address
+	calculating relocation address for decompression if needed.
 
 preparation before entering long mode
+	First, we need to update the Global Descriptor Table with
+	64-bit segments because an relocatable kernel may be runned
+	at any address below 512G
+
+	The last step is to build page tables, but before that,
+	here is some information about long mode.
 
 Long mode
 
+	To switch into 64-bit mode we need to do following things:
+	Enable PAE;
+	Build page tables and load the address of the top level page table into the cr3 register;
+	Enable EFER.LME;
+	Enable paging.
+	We already enabled PAE by setting the PAE bit in the cr4 control
+	register. Our next goal is to build the structure for paging. 
+
 Early page table initialization
+	The Linux kernel uses 4-level paging, and we generally build 6 page tables:
+	One PML4 or Page Map Level 4 table with one entry;
+	One PDP or Page Directory Pointer table with four entries;
+	Four Page Directory tables with a total of 2048 entries.
 
 Transition to the 64-bit mode
 ************************************************************************
 Kernel decompression
 
 Preparation before kernel decompression
+	The next step is computation of difference between where the kernel
+	was compiled and where it was loaded:
 
 Last preparation before kernel decompression
+	We need to initialize the .bss section, because we'll soon jump to C code. 
 
 kernel decompression
 
 ************************************************************************
+	a physical address at which Linux kernel image will be decompressed
+	and loaded will be randomized for security reason
+
 Initialization of page tables
+	Before the kernel decompressor will start to find random memory range
+	where the kernel will be decompressed and loaded, the identity mapped
+	page tables should be initialized.
 
 Avoids reserved memory ranges
+	After the stuff related to identity page tables is initilized, we may
+	start to choose random location where to put decompressed kernel image.
+	But as you may guess, we can't choose any address. There are some
+	reseved addresses in memory ranges.
 
 Physical address randomization
+	we select minimal available address to choose random memory region
+	to decompress the kernel
 
 Virtual address randomization
 
@@ -128,14 +209,39 @@ Virtual address randomization
 Initialization
 
 First steps in the kernel code
+	Base physical address of the Linux kernel - 0x1000000;
+	Base virtual address of the Linux kernel - 0xffffffff81000000.
 
 Fix base addresses of page tables
+	The first step before we start to setup identity paging is to fixup following addresses:
+   	 addq    %rbp, early_level4_pgt + (L4_START_KERNEL*8)(%rip)
+  	  addq    %rbp, level3_kernel_pgt + (510*8)(%rip)
+  	  addq    %rbp, level3_kernel_pgt + (511*8)(%rip)
+  	  addq    %rbp, level2_fixmap_pgt + (506*8)(%rip)
 
 Identity mapping setup
+	Now we can see the set up of identity mapping of early page tables.
+	In Identity Mapped Paging, virtual addresses are mapped to physical
+	addresses that have the same value, 1 : 1.
 
 Last preparation before jump at the kernel entry point
+	enable PAE, PGE (Paging Global Extension) and put the content of
+	the phys_base (see above) to the rax register and fill cr3 register with it:
 
 Next to start_kernel
+	some checks in the x86_64_start_kernel function:
+	BUILD_BUG_ON(MODULES_VADDR < __START_KERNEL_map);
+	BUILD_BUG_ON(MODULES_VADDR - __START_KERNEL_map < KERNEL_IMAGE_SIZE);
+	BUILD_BUG_ON(MODULES_LEN + KERNEL_IMAGE_SIZE > 2*PUD_SIZE);
+	BUILD_BUG_ON((__START_KERNEL_map & ~PMD_MASK) != 0);
+	BUILD_BUG_ON((MODULES_VADDR & ~PMD_MASK) != 0);
+	BUILD_BUG_ON(!(MODULES_VADDR > __START_KERNEL));
+	BUILD_BUG_ON(!(((MODULES_END - 1) & PGDIR_MASK) == (__START_KERNEL & PGDIR_MASK)));
+	BUILD_BUG_ON(__fix_to_virt(__end_of_fixed_addresses) <= MODULES_END);
+
+	Soon we will build new page tables. Here we can see that we go through
+	all Page Global Directory Entries (PTRS_PER_PGD is 512) in the loop
+	and make it zero.
 ************************************************************************
 Early interrupt and exception handling
 	0-31 exceptions
@@ -146,6 +252,11 @@ Fill and load IDT
 Early interrupts handlers
 
 Page fault handling
+	first early interrupt handler which checks interrupt number
+	for page fault and calls early_make_pgtable for building new page tables if it is
+
+	After page fault handler finished it's work and as result our early_level4_pgt
+	contains entries which point to the valid addresses.
 ************************************************************************
 Last preparations before the kernel entry point
 
@@ -155,15 +266,25 @@ Move on init pages
 
 	init_level4_pgt > maps first 2 gigabytes and 512 megabytes for the kernel code, data and bss
 
+	As we have init_level4_pgt filled with zeros, we set the last init_level4_pgt
+	entry to kernel high mapping with the:
+
 Last step before kernel entry point
 	copy_bootdata(real_mode_data)
 	reserve_ebda_region
 
 First touch of the linux kernel memory manager framework
+	memblock_reserve
+
 	. physical base addess of the memory region
 	. size of the memory region
 	. maximum number of numa nodes
 	. flags
+
+	After we filled our region we can see the call of the memblock_set_region_node
+	function with two parameters:
+	. address of the filled memory region;
+	. NUMA node id.
 ************************************************************************
 Kernel entry point
 

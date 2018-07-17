@@ -1,0 +1,34 @@
+https://medium.com/@g789872001darren/gogoalgorithm-1-depth-first-search-582eeb58f23a
+n = 3
+a = {2, 5, 8}
+k = 7
+               i = 0
+             sum = 0
+        |                |
+       i=1             i = 1
+     sum=0           sum = 2
+    |     |         |       | include a[1]
+   i=2   i=2       i=2     i=2
+ sum=0 sum=5     sum=2   sum=7
+                        |      | include a[2]
+                       i=3    i=3
+                     sum=7  sum=15
+
+
+func dfs(x int, sum int) bool {
+	if x == n {
+		return sum == k
+	} else if dfs(x+1, sum) {
+		return true
+	} else if dfs(x+1, sum+a[x]) {
+		return true
+	} else {
+		return false
+	}
+}
+
+func main() {
+	if dfs(0,0) {
+		fmt.Println("YES")
+	}
+}

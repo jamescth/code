@@ -3,8 +3,8 @@ or "2001:db8::/48"
 
 // IP address lengths (bytes).
 const (
-	IPv4len = 4
-	IPv6len = 16
+	IPv4len = 4	= 32 bits
+	IPv6len = 16	= 128 bits
 )
 
 
@@ -25,6 +25,29 @@ var (
 	IPv6linklocalallnodes      = IP{0xff, 0x02, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x01}
 	IPv6linklocalallrouters    = IP{0xff, 0x02, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x02}
 )
+
+DNS
+https://en.wikipedia.org/wiki/List_of_DNS_record_types
+Type - description
+A	Address record
+AAAA	IPv6 address record
+APL	Address Prefix record
+CNAME	canonical Name. is used to alias one name to anothe
+MX	Mail exchange record
+NS	Name server record
+PTR	pointer record
+TXT	text record
+
+STP - Spanning Tree Protocol
+
+VLan - Virtual Local Area Network
+
+VxLan - Virtual Extensible LAN
+https://tools.ietf.org/html/draft-mahalingam-dutt-dcops-vxlan-02
+
+A proposed encapsulation protocol for running an overlay network on existing Layer 3 infrastructure.
+
+VTEP - VXLAN Tunnel End Point - an entity which originates and/or terminates VXLAN tunnels
 
 $ ping 192.0.2.45
 PING 192.0.2.45 (192.0.2.45) 56(84) bytes of data.

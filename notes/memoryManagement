@@ -1,0 +1,241 @@
+****************************************************************************************************
+Memblock
+early page tables, identity page tables and fixmap page tables in the boot time.
+No complicated memory management is working yet. When the start_kernel function
+is called we will see the transition to more complex data structures and
+techniques for memory management.
+
+struct memblock {
+         bool bottom_up;
+         phys_addr_t current_limit;
+         struct memblock_type memory;   --> array of memblock_region
+         struct memblock_type reserved; --> array of memblock_region
+#ifdef CONFIG_HAVE_MEMBLOCK_PHYS_MAP
+         struct memblock_type physmem;
+#endif
+};
+
+First is bottom_up which allows allocating memory in bottom-up mode
+when it is true. Next field is current_limit. This field describes
+the limit size of the memory block. The next three fields describe
+the type of the memory block. It can be: reserved, memory and
+physical memory (physical memory is available if the
+CONFIG_HAVE_MEMBLOCK_PHYS_MAP configuration option is enabled)
+
+struct memblock_type {
+    unsigned long cnt;
+    unsigned long max;
+    phys_addr_t total_size;
+    struct memblock_region *regions;
+};
+
+This structure provides information about the memory type.
+It contains fields which describe the number of memory 
+regions inside the current memory block, the size of all
+memory regions, the size of the allocated array of the
+memory regions, and a pointer to the array of the
+memblock_region structures. 
+
+struct memblock_region {
+        phys_addr_t base;
+        phys_addr_t size;
+        unsigned long flags;
+#ifdef CONFIG_HAVE_MEMBLOCK_NODE_MAP
+        int nid;
+#endif
+};
+
+enum {
+    MEMBLOCK_NONE    = 0x0,    /* No special request */
+    MEMBLOCK_HOTPLUG    = 0x1,    /* hotpluggable region */
+    MEMBLOCK_MIRROR    = 0x2,    /* mirrored region */
+    MEMBLOCK_NOMAP    = 0x4,    /* don't add to kernel direct mapping */
+};
+
+if the CONFIG_HAVE_MEMBLOCK_NODE_MAP configuration option is enabled.
++---------------------------+   +---------------------------+
+|         memblock          |   |                           |
+|  _______________________  |   |                           |
+| |        memory         | |   |       Array of the        |
+| |      memblock_type    |-|-->|      memblock_region      |
+| |_______________________| |   |                           |
+|                           |   +---------------------------+
+|  _______________________  |   +---------------------------+
+| |       reserved        | |   |                           |
+| |      memblock_type    |-|-->|       Array of the        |
+| |_______________________| |   |      memblock_region      |
+|                           |   |                           |
++---------------------------+   +---------------------------+
+
+These three structures: memblock, memblock_type and memblock_region are main in the Memblock. 
+
+****************************************************************************************************
+Memblock initialization
+
+static struct memblock_region memblock_memory_init_regions[INIT_MEMBLOCK_REGIONS] __initdata_memblock;
+static struct memblock_region memblock_reserved_init_regions[INIT_MEMBLOCK_REGIONS] __initdata_memblock;
+#ifdef CONFIG_HAVE_MEMBLOCK_PHYS_MAP
+static struct memblock_region memblock_physmem_init_regions[INIT_PHYSMEM_REGIONS] __initdata_memblock;
+#endif
+
+Every array contains 128 memory regions. We can see it in the INIT_MEMBLOCK_REGIONS macro definition:
+
+#define INIT_MEMBLOCK_REGIONS   128
+
+****************************************************************************************************
+Memblock API
+
+There are a couple of places in the linux kernel where memblock is used.
+For example let's take memblock_x86_fill function from the
+arch/x86/kernel/e820.c. This function goes through the memory map
+provided by the e820 and adds memory regions reserved by the kernel
+to the memblock with the memblock_add function.
+
+This function takes a physical base address and the size of the memory
+region as arguments and add them to the memblock. The memblock_add
+function does not do anything special in its body, but just calls the:
+
+memblock_add_range(&memblock.memory, base, size, MAX_NUMNODES, 0);
+
+phys_addr_t end = base + memblock_cap_size(base, &size);
+
+After that we have the end address of the new memory region, 
+memblock_add_range checks for overlap and merge conditions with
+memory regions that have been added before. Insertion of the new
+memory region to the memblock consists of two steps:
+
+. Adding of non-overlapping parts of the new memory area as separate regions;
+. Merging of all neighboring regions.
+
+
+memblock_add_range calls memblock_merge_regions which merges neighboring 
+compatible regions in the second step.
+In the second case the new memory region can overlap already stored regions.
+For example we already have region1 in the memblock:
+
+0                    0x1000
++-----------------------+
+|                       |
+|                       |
+|        region1        |
+|                       |
+|                       |
++-----------------------+
+
+And now we want to add region2 to the memblock with the following base address and size:
+0x100                 0x2000
++-----------------------+
+|                       |
+|                       |
+|        region2        |
+|                       |
+|                       |
++-----------------------+
+
+After this we will get two memory regions merged into one:
+0                                             0x2000
++------------------------------------------------+
+|                                                |
+|                                                |
+|                   region1                      |
+|                                                |
+|                                                |
++------------------------------------------------+
+
+As we decreased counts of regions in a memblock with certain type, increased size
+of the this region and shifted all regions which are located after next region to
+its place.
+
+That's all. This is the whole principle of the work of the memblock_add_range function.
+
+****************************************************************************************************
+Getting info about memory regions
+
+get_allocated_memblock_memory_regions_info - getting info about memory regions;
+get_allocated_memblock_reserved_regions_info - getting info about reserved regions.
+
+
+****************************************************************************************************
+Fix-Mapped Addresses and ioremap
+
+Fix-Mapped addresses are a set of special compile-time addresses whose 
+corresponding physical addresses do not have to be a linear address minus
+__START_KERNEL_map. Each fix-mapped address maps one page frame and the
+kernel uses them as pointers that never change their address.
+
+level2_fixmap_pgt is right after the level2_kernel_pgt which is kernel
+code+data+bss. Every fix-mapped address is represented by an integer
+index which is defined in the fixed_addresses
+
+       +-----------+-----------------+---------------+------------------+
+       |           |                 |               |                  |
+       |kernel text|      kernel     |               |    vsyscalls     |
+       | mapping   |       text      |    Modules    |    fix-mapped    |
+       |from phys 0|       data      |               |    addresses     |
+       |           |                 |               |                  |
+       +-----------+-----------------+---------------+------------------+
+__START_KERNEL_map   __START_KERNEL    MODULES_VADDR            0xffffffffffffffff
+
+Here we shift left the given index of a fix-mapped area on the PAGE_SHIFT
+which determines size of a page as I wrote above and subtract it from the
+FIXADDR_TOP which is the highest address of the fix-mapped area:
+
++-----------------+ 
+|    PAGE 1       | FIXADDR_TOP (virt address)
+|    PAGE 2       |
+|    PAGE 3       |
+|    PAGE 4 (idx) | x - 4
+|    PAGE 5       |
++-----------------+
+
+Fix-mapped addresses are used in different places in the linux kernel. 
+IDT descriptor stored there, Intel Trusted Execution Technology UUID
+stored in the fix-mapped area started from FIX_TBOOT_BASE index, Xen
+bootmap and many more...
+
+
+****************************************************************************************************
+ioremap
+
+Every device is controlled by reading/writing from/to its registers. 
+For example a driver can turn off/on a device by writing to its
+registers or get the state of a device by reading from its registers. 
+
+. through the I/O ports;
+. mapping of the all registers to the memory address space;
+
+In the first case every control register of a device has a number of
+input and output port. A device driver can read from a port and write
+to it with two in and out instructions which we already saw. If you
+want to know about currently registered port regions, you can learn
+about them by accessing /proc/ioports:
+
+$ cat /proc/ioports
+0000-0cf7 : PCI Bus 0000:00
+  0000-001f : dma1
+  0020-0021 : pic1
+  0040-0043 : timer0
+  0050-0053 : timer1
+
+/proc/ioports provides information about which driver uses which address of a I/O port region.
+
+ioremap maps I/O physical memory regions to make them accessible from the kernel.
+The ioremap function takes two parameters:
+
+start of the memory region;
+size of the memory region;
+
+****************************************************************************************************
+Use of early ioremap
+
+early_ioremap
+early_iounmap
+
+he memory management unit knows about the high-level page table addresses (pgd) from the cr3
+control register. If CONFIG_MMU options is set to n, early_ioremap just returns the given
+physical address and early_iounmap does nothing. If CONFIG_MMU option is set to y, 
+early_ioremap calls __early_ioremap which takes three parameters:
+
+phys_addr - base physical address of the I/O memory region to map on virtual addresses;
+size - size of the I/O memory region;
+prot - page table entry bits.

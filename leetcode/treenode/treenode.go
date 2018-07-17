@@ -12,10 +12,7 @@ func CompareTreeNode(r1, r2 *TreeNode) bool {
 	if r1 == nil && r2 == nil {
 		return true
 	}
-	if r1 == nil {
-		return false
-	}
-	if r2 == nil {
+	if r1 == nil || r2 == nil {
 		return false
 	}
 

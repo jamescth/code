@@ -1,0 +1,27 @@
+
+
+
+RW semaphores
+
+The basic idea is: free lock = 0
+
+down_read() decrements lock ... -1 for each reader (only if it's <= 0)
+
+up_read() increments lock ... +1 when 1 reader finished reading
+
+down_write() increments lock to 1 ... only if it's 0 -- free
+
+up_write() decrements back to 0
+
+Seqlock
+
+It is a reader-writer consistent mechanism which avoids the problem of writer starvation.
+A seqlock consists of storage for saving a sequence number in addition to a lock. The
+lock is to support synchronization between two writers and the counter is for indicating
+consistency in readers. In addition to updating the shared data, the writer increments
+the sequence number, both after acquiring the lock and before releasing the lock. Readers
+read the sequence number before and after reading the shared data. If the sequence number
+is odd on either occasion, a writer had taken the lock while the data was being read and
+it may have changed. If the sequence numbers are different, a writer has changed the
+data while it was being read. In either case readers simply retry (using a loop) until
+they read the same even sequence number before and after.
