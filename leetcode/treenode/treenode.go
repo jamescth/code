@@ -52,10 +52,25 @@ func Insert(root **TreeNode, n int) {
 }
 
 func Show(root *TreeNode, level int) {
-	if root == nil {
-		return
+
+	var walk func(root *TreeNode, level int)
+
+	var ret [][]int
+	walk = func(root *TreeNode, level int) {
+		if root == nil {
+			return
+		}
+		if level >= len(ret) {
+			ret = append(ret, []int{root.Val})
+		} else {
+			ret[level] = append(ret[level], root.Val)
+		}
+
+		fmt.Printf("-> val %d l %d\n", root.Val, level)
+		walk(root.Left, level+1)
+		walk(root.Right, level+1)
 	}
-	fmt.Printf("-> val %d l %d\n", root.Val, level)
-	Show(root.Left, level+1)
-	Show(root.Right, level+1)
+
+	walk(root, level)
+	fmt.Println(ret)
 }

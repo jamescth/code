@@ -1,0 +1,140 @@
+https://httpd.apache.org/docs/trunk/getting-started.html
+
+https://linuxgazette.net/132/vishnu.html
+
+ps aux | grep httpd
+USER       PID %CPU      %MEM           VSZ  RSS TTY      STAT        START   TIME     COMMAND
+root      1861  0.0      0.4           25680 1992 ?        Ss         Sep24   0:02     /usr/sbin/httpd
+apache    2295  0.0      0.4           25852 2024 ?        S          Sep24   0:00     /usr/sbin/httpd
+apache    2296  0.0      0.4           25852 2024 ?        S          Sep24   0:00     /usr/sbin/httpd
+apache    2297  0.0      0.4           25852 2024 ?        S          Sep24   0:00     /usr/sbin/httpd
+apache    2298  0.0      0.4           25852 2024 ?        S          Sep24   0:00     /usr/sbin/httpd
+apache    2299  0.0      0.4           25852 2024 ?        S          Sep24   0:00     /usr/sbin/httpd
+apache    2300  0.0      0.4           25852 2024 ?        S          Sep24   0:00     /usr/sbin/httpd
+apache    2301  0.0      0.4           25852 2024 ?        S          Sep24   0:00     /usr/sbin/httpd
+apache    2302  0.0      0.4           25852 2024 ?        S          Sep24   0:00     /usr/sbin/httpd
+
+# pstree -p | grep httpd
+        +-httpd(1861)---httpd(2295)
+        |             +-httpd(2296)
+        |             +-httpd(2297)
+        |             +-httpd(2298)
+        |             +-httpd(2299)
+        |             +-httpd(2300)
+        |             +-httpd(2301)
+        |             +-httpd(2302)
+
+[root@dns1 root]# strace -f -o trace.txt /etc/rc.d/init.d/httpd start
+
+
+[root@dns1 root]# grep mail.php trace.txt
+21837 read(7, "GET /mail.php HTTP/1.1\r\nUser-Age"..., 4096) = 472
+21837 stat64("/var/www/virtdomain/mail.php", {st_mode=S_IFREG|0644, st_size=587, ...}) = 0
+
+21837 chdir("/var/www/virtdomaint") = 0
+21837 open("/var/www/virtdomain/mail.php", O_RDONLY) = 8
+.
+.
+.
+.
+21837 fork() = 21844
+
+21844 execve("/bin/sh", ["sh", "-c", "/usr/sbin/sendmail -t -i"], [/* 21 vars */]) = -1 EACCES (Permission denied)
+
+
+
+**********************************************************************************************************
+cat /proc/<pid>/stack
+
+use journalctl to view and manipulate systemd logs
+
+journalctl 
+
+displaying logs from the current boot
+journalctl -b
+
+$ journalctl --list-boots
+-27 98b22c4bc28d4aed96c1f8dfaf54e24e Fri 2018-06-29 13:31:18 PDT—Fri 2018-06-29 13:36:27 PDT
+-26 53c8d39d51ac4e958a5dc068d9b1b50b Fri 2018-06-29 13:37:52 PDT—Fri 2018-06-29 13:40:22 PDT
+-25 058a564a49cf47d28d17e78696cbaa89 Fri 2018-06-29 13:40:30 PDT—Mon 2018-07-02 16:35:14 PDT
+....
+
+Time windows
+journalctl --since "2015-01-10 17:15:00"
+journalctl --since "2015-01-10" --until "2015-01-11 03:00"
+
+Filtering by Message interest
+By Unit
+journalctl -u nginx.service
+
+$ journalctl -u apache2.service
+-- Logs begin at Fri 2018-06-29 13:31:18 PDT, end at Wed 2018-07-18 22:05:01 PDT. --
+Jul 18 15:25:38 jbox systemd[1]: Starting The Apache HTTP Server...
+Jul 18 15:25:38 jbox apachectl[18442]: AH00558: apache2: Could not reliably determine the server's f
+Jul 18 15:25:38 jbox systemd[1]: Started The Apache HTTP Server.
+
+DIsplaying Kernel Msg
+journalctl -k
+
+
+**********************************************************************************************************
+/etc/apache/.
+/etc/init.d$ cat apache2
+
+sudo /etc/init.d$ /etc/init.d/apache2 stop
+[ ok ] Stopping apache2 (via systemctl): apache2.service.
+
+$ sudo strace -f -o /tmp/trace.txt /etc/init.d/apache2 start
+
+
+$ ltrace -f -o /tmp/ltrace.txt /etc/init.d/apache2 start
+"/etc/init.d/apache2" is not an ELF file
+
+**********************************************************************************************************
+
+$ pstree -p | grep apache
+           |-apache2(18453)-+-apache2(18454)-+-{apache2}(18470)
+           |                |                |-{apache2}(18472)
+           |                |                |-{apache2}(18487)
+           |                |                |-{apache2}(18488)
+           |                |                |-{apache2}(18489)
+           |                |                |-{apache2}(18490)
+           |                |                |-{apache2}(18491)
+           |                |                |-{apache2}(18492)
+           |                |                |-{apache2}(18493)
+           |                |                |-{apache2}(18494)
+           |                |                |-{apache2}(18495)
+           |                |                |-{apache2}(18496)
+
+
+$ sudo systemctl status apache2
+apache2.service - The Apache HTTP Server
+   Loaded: loaded (/lib/systemd/system/apache2.service; enabled; vendor preset: enabled)
+  Drop-In: /lib/systemd/system/apache2.service.d
+           └─apache2-systemd.conf
+   Active: active (running) since Wed 2018-07-18 15:25:38 PDT; 14s ago
+ Main PID: 18453 (apache2)
+    Tasks: 55 (limit: 4915)
+   CGroup: /system.slice/apache2.service
+           ├─18453 /usr/sbin/apache2 -k start
+           ├─18454 /usr/sbin/apache2 -k start
+           └─18455 /usr/sbin/apache2 -k start
+
+Jul 18 15:25:38 jbox systemd[1]: Starting The Apache HTTP Server...
+Jul 18 15:25:38 jbox apachectl[18442]: AH00558: apache2: Could not reliably determine the server's f
+Jul 18 15:25:38 jbox systemd[1]: Started The Apache HTTP Server.
+
+$ hostname -I
+10.0.2.15 
+
+$ hostname -I
+10.0.2.15 
+james@jbox:~$ curl 10.0.2.15
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <!--
+    Modified from the Debian original for Ubuntu
+    Last updated: 2016-11-16
+    See: https://launchpad.net/bugs/1288690
+    ...

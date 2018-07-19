@@ -1,0 +1,391 @@
+Send packets to remote machines and try to upgrade the packet remotely. Troubleshooting why some of the machines are not updated.  
+TCP/IP, DNS, HTTP
+
+DNS
+https://en.wikipedia.org/wiki/Domain_Name_System
+
+DNS trouble shoot:
+https://www.linux.com/learn/intro-to-linux/2018/3/simple-load-balancing-dns-linux
+
+BIND or named is the most widely used Domain Name
+System (DNS) software on the Internet
+
+The most common types of records stored in the DNS database are for
+	Start of Authority (SOA),
+		Specifies authoritative information about a DNS zone, 
+		including the primary name server, the email of the 
+		domain administrator, the domain serial number, and
+		several timers relating to refreshing the zone.
+
+		A DNS zone is any distinct, contiguous portion of the
+		domain name space in the Domain Name System (DNS) for
+		which administrative responsibility has been delegated
+		to a single manager.
+
+	IP addresses (A and AAAA),
+		A - Address record
+		AAAA - IPv6 address record
+
+	SMTP mail exchangers (MX),
+		Within Internet message handling services (MHS), a message
+		transfer agent[1] or mail transfer agent[2] (MTA) or mail
+		relay is software that transfers electronic mail messages
+		from one computer to another using a client–server 
+		application architecture. An MTA implements both the client
+		(sending) and server (receiving) portions of the Simple 
+		Mail Transfer Protocol.
+
+	name servers (NS),
+	pointers for reverse DNS lookups (PTR),
+	and domain name aliases (CNAME).
+
+Ethernet header - layer 2
+	MTU - 1500 
+	"preamble"  "start of frame delimiter"  "Mac Dest"  "Mac src"  "Tag"  "Ethernettype Len"  "Payload"  "CRC"  "interpacket gap"
+	   7                1                       6           6        4            2            46-1500     4           12
+
+Jumbo Frame
+	Each Ethernet frame must be processed as it passes through the network. Processing the 
+	contents of a single large frame is preferable to processing the same content broken
+	up into smaller frames, as this makes better use of available CPU time by reducing
+	interrupts. This also minimizes the overhead byte count and reduces the number of
+	frames needing to be processed.
+
+	"frame type"  "MTU" "Layer 1 overhead"  "layer 2 overhead"  "layer 3"  "layer 4"  "payload size"  "total transmitted"  "effciency"
+	standard      1500          8    12          14       4      IPv4H 20    TCPH 20       1460               1538            94.93%
+	Jumbo         9000          8    12          14       4        .            .          8960               9038            99.14%
+
+IPv4 - layer 3 
+	Version - 4 bits, value 4
+	Internet Header Length (IHL) - 4 bits, The size of header (including options), the mini is 5 => 5*32 = 160 bits = 20 bytes
+	Differentiated Services Code point (DSCP)
+		TYpe of service
+		Differentiated services or DiffServ is a computer networking architecture that
+		specifies a simple and scalable mechanism for classifying and managing network
+		traffic and providing quality of service (QoS) on modern IP networks. 
+
+		Commonly used DSCP values
+		DSCP value	Hex value	Decimal value	Meaning	Drop probability	Equivalent IP precedence value
+		101 110	0x2e	46	Expedited forwarding (EF)	N/A	101 Critical
+		000 000	0x00	0	Best effort	N/A	000 - Routine
+		001 010	0x0a	10	AF11	Low	001 - Priority
+		001 100	0x0c	12	AF12	Medium	001 - Priority
+		001 110	0x0e	14	AF13	High	001 - Priority
+
+	Explicit Congestion Notification (ECN) - 2 bits
+		allows end-to-end notification of network congestion without dropping packets.
+
+	Total Length - 16 bits
+		This 16-bit field defines the entire packet size in bytes, including header and data. 
+		The minimum size is 20 bytes (header without data) and the maximum is 65,535 bytes.
+
+	Identification - 16 bits
+		This field is an identification field and is primarily used for uniquely identifying
+		the group of fragments of a single IP datagram.
+
+	Flags - 3 bits
+		A three-bit field follows and is used to control or identify fragments. They are (in order,
+		from most significant to least significant):
+			bit 0: Reserved; must be zero.[note 1]
+			bit 1: Don't Fragment (DF)
+			bit 2: More Fragments (MF)
+		If the DF flag is set, and fragmentation is required to route the packet, then the packet
+		is dropped. This can be used when sending packets to a host that does not have resources 
+		to handle fragmentation. It can also be used for path MTU discovery, either automatically
+		by the host IP software, or manually using diagnostic tools such as ping or traceroute. 
+		For unfragmented packets, the MF flag is cleared. For fragmented packets, all fragments
+		except the last have the MF flag set. The last fragment has a non-zero Fragment Offset 
+		field, differentiating it from an unfragmented packet.
+
+	Fragment Offset - 13 bits
+		The fragment offset field is measured in units of eight-byte blocks. It is 13 bits long
+		and specifies the offset of a particular fragment relative to the beginning of the 
+		original unfragmented IP datagram. The first fragment has an offset of zero. This allows
+		a maximum offset of (213 – 1) × 8 = 65,528 bytes, which would exceed the maximum IP packet
+		length of 65,535 bytes with the header length included (65,528 + 20 = 65,548 bytes).
+
+	Time to Live - 8 bits
+		An eight-bit time to live field helps prevent datagrams from persisting
+		(e.g. going in circles) on an internet. This field limits a datagram's lifetime. 
+
+	Protocol - 8 bits
+		this field defines the protocol used in the data portion of the IP datagram. 
+			0x01	1	ICMP	Internet Control Message Protocol	RFC 792
+			0x02	2	IGMP	Internet Group Management Protocol	RFC 1112
+			0x06	6	TCP	Transmission Control Protocol
+			0x11	17	UDP	User Datagram Protocol	RFC 768
+
+	Header Checksum - 16 bits
+		field is used for error-checking of the header. When a packet arrives at a router,
+		the router calculates the checksum of the header and compares it to the checksum
+		field. If the values do not match, the router discards the packet.
+
+	Src IP address - 32 bits
+	Dest IP address - 32 bits
+
+	Options (if IHL > 5)
+
+	************************************************************************************************
+	Fragmentation and reassembly
+	Networks with different hardware usually vary not only in transmission speed, but also in the 
+	maximum transmission unit (MTU). When one network wants to transmit datagrams to a network with
+	a smaller MTU, it may fragment its datagrams. In IPv4, this function was placed at the Internet
+	Layer, and is performed in IPv4 routers, which thus require no implementation of any higher
+	layers for the function of routing IP packets.
+
+	In contrast, IPv6, the next generation of the Internet Protocol, does not allow routers to perform
+	fragmentation; hosts must determine the path MTU before sending datagrams.
+
+	Fragmentation
+
+	or example, a packet of 4,520 bytes, including the 20 bytes of the IP header (without options)
+	is fragmented to two packets on a link with an MTU of 2,500 bytes:
+
+	Fragment	Total bytes	Header bytes	Data bytes	"More fragments" flag	Fragment offset (8-byte blocks)
+	1		2500		20		2480		1			0
+	2		2040		20		2020		0			310
+	The total data size is preserved: 2480 bytes + 2020 bytes = 4500 bytes. The offsets are 0 and 0 + 2480/8 = 310.
+
+	On a link with an MTU of 1,500 bytes, each fragment results in two fragments:
+
+	Fragment	Total bytes	Header bytes	Data bytes	"More fragments" flag	Fragment offset (8-byte blocks)
+	1		1500		20		1480		1			0
+	2		1020		20		1000		1			185
+	3		1500		20		1480		1			310
+	4		560		20		540		0			495
+	Again, the data size is preserved: 1480 + 1000 = 2480, and 1480 + 540 = 2020.
+
+	Reassembly
+	A receiver knows that a packet is a fragment if at least one of the following conditions is true:
+
+	The "more fragments" flag is set. (This is true for all fragments except the last.)
+	The "fragment offset" field is nonzero. (This is true for all fragments except the first.)
+
+IPv6
+	The fixed header starts an IPv6 packet and has a size of 40 octets (320 bits).
+
+	Version - 4 bits, contains 6
+
+	Traffic Class (6+2 bits)
+		The bits of this field hold two values. The 6 most-significant bits hold the Differentiated Services (DS)
+		field, which is used to classify packets.
+
+		The remaining two bits are used for Explicit Congestion Notification (ECN)
+
+	Flow Label (20 bits)
+		Originally created for giving real-time applications special service.[1] When set to a non-zero value,
+		it serves as a hint to routers and switches with multiple outbound paths that these packets should stay
+		on the same path, so that they will not be reordered.[6][7] It has further been suggested that the flow
+		label be used to help detect spoofed packets.
+
+	Payload Length (16 bits)
+		The size of the payload in octets, including any extension headers. The length is set to zero when a
+		Hop-by-Hop extension header carries a Jumbo Payload option.
+
+	Next Header (8 bits)
+		Specifies the type of the next header. This field usually specifies the transport layer protocol used
+		by a packet's payload. When extension headers are present in the packet this field indicates which 
+		extension header follows.
+
+	Hop Limit (8 bits)
+		Replaces the time to live field of IPv4.
+
+	Src Address (128 bits)
+
+	Dest Address (128 bits)
+
+	************************************************************************************************
+	Extension Headers
+
+	Hop-by-hp options and destination options
+	he Hop-by-Hop Options extension header needs to be examined by all nodes on the packet's path, 
+	including sending and receiving nodes. 
+
+	Routing
+	The Routing extension header is used to direct a packet to one or more intermediate nodes 
+	before being sent to its destination.
+
+	Fragment
+	In order to send a packet that is larger than the path MTU, the sending node splits the packet into fragments.
+
+TCP - layer 4 - Transmission Control Protocol (20 bytes)
+	Src port (16 bits)
+
+	Dest port (16 bits)
+
+	Seq number (32 bits)
+		If the SYN flag is set (1), then this is the initial sequence number. The sequence number
+		of the actual first data byte and the acknowledged number in the corresponding ACK are
+		then this sequence number plus 1.
+
+		If the SYN flag is clear (0), then this is the accumulated sequence number of the first
+		data byte of this segment for the current session.
+
+	Ack number (32 bits)
+
+	Data offset (4 bits)
+		The minimum size header is 5 words and the maximum is 15 words thus giving the minimum size
+		of 20 bytes and maximum of 60 bytes, allowing for up to 40 bytes of options in the header.
+
+	Reserved (3 bits)
+
+	Flags (9 bits)
+		NS (1 bit): ECN-nonce - concealment protection (experimental: see RFC 3540).
+
+		CWR (1 bit): Congestion Window Reduced (CWR) flag is set by the sending host to indicate
+			that it received a TCP segment with the ECE flag set and had responded in 
+			congestion control mechanism (added to header by RFC 3168).
+
+		ECE (1 bit): ECN-Echo has a dual role, depending on the value of the SYN flag. It indicates:
+			If the SYN flag is set (1), that the TCP peer is ECN capable.
+			If the SYN flag is clear (0), that a packet with Congestion Experienced flag set
+			(ECN=11) in the IP header was received during normal transmission (added to header
+			by RFC 3168). This serves as an indication of network congestion (or impending
+			congestion) to the TCP sender.
+
+		URG (1 bit): indicates that the Urgent pointer field is significant
+
+		ACK (1 bit): indicates that the Acknowledgment field is significant. All packets
+			after the initial SYN packet sent by the client should have this flag set.
+
+		PSH (1 bit): Push function. Asks to push the buffered data to the receiving application.
+
+		RST (1 bit): Reset the connection
+
+		SYN (1 bit): Synchronize sequence numbers. Only the first packet sent from each end 
+			should have this flag set. Some other flags and fields change meaning based
+			on this flag, and some are only valid when it is set, and others when it is clear.
+
+		FIN (1 bit): Last packet from sender.
+
+	Window size (16 bits)
+		The size of the receive window, which specifies the number of window size units (by default, bytes) 
+
+	Checksum (16 bits)
+	
+	Urgent pointer (16 bits)
+		if the URG flag is set, then this 16-bit field is an offset from the sequence number indicating
+		the last urgent data byte.
+
+	Options (0-320 bits)
+		Some options may only be sent when SYN is set; they are indicated below as [SYN]. Option-Kind
+		and standard lengths given as (Option-Kind,Option-Length).
+
+			0 (8 bits): End of options list
+			1 (8 bits): No operation (NOP, Padding) This may be used to align option fields on
+				32-bit boundaries for better performance.
+			2,4,SS (32 bits): Maximum segment size (see maximum segment size) [SYN]
+			3,3,S (24 bits): Window scale (see window scaling for details) [SYN][7]
+			4,2 (16 bits): Selective Acknowledgement permitted. [SYN] (See selective acknowledgments for details)[8]
+			5,N,BBBB,EEEE,... (variable bits, N is either 10, 18, 26, or 34)- Selective ACKnowledgement
+				(SACK)[9] These first two bytes are followed by a list of 1–4 blocks being selectively
+				acknowledged, specified as 32-bit begin/end pointers.
+			8,10,TTTT,EEEE (80 bits)- Timestamp and echo of previous timestamp (see TCP timestamps for details)[10]
+UDP - 8 bytes
+	Src port
+
+	Dest port
+
+	Length
+
+	Checksum
+
+ARP - Address Resolution Protocol
+Two computers in an office (computer 1 and computer 2) are connected to each other 
+in a local area network by Ethernet cables and network switches, with no intervening
+gateways or routers. Computer 1 has a packet to send to Computer 2. Through DNS, it
+determines that Computer 2 has the IP address 192.168.0.55. To send the message, it
+also requires Computer 2's MAC address. First, Computer 1 uses a cached ARP table to
+look up 192.168.0.55 for any existing records of Computer 2's MAC address (00:eb:24:b2:05:ac).
+If the MAC address is found, it sends an Ethernet frame with destination address
+00:eb:24:b2:05:ac, containing the IP packet onto the link. If the cache did not produce
+a result for 192.168.0.55, Computer 1 has to send a broadcast ARP message
+(destination FF:FF:FF:FF:FF:FF MAC address), which is accepted by all computers on
+the local network, requesting an answer for 192.168.0.55. Computer 2 responds with
+its MAC and IP addresses. Computer 2 may insert an entry for Computer 1 into its ARP
+table for future use. Computer 1 caches the response information in its ARP table and
+can now send the packet.
+
+
+Layer 1 & Layer 2 Features
+STP - Spanning tree protocol
+	it prevents bridge loops and 
+	broadcast radiation on a bridge network
+
+	cmd:
+		brctl
+		mstpctl
+
+LLDP - Link Layer Discover Protocol
+	for network devices to advertise their identity.
+
+	cmd:
+		lldpd (daemon)
+		lldpcli (interactive CLI)
+
+	cumulus@switch:~$ sudo lldpcli show neighbors
+	-------------------------------------------------------------------------------
+	LLDP neighbors:
+	-------------------------------------------------------------------------------
+	Interface:    eth0, via: LLDP, RID: 1, Time: 0 day, 17:38:08
+	  Chassis:    
+	    ChassisID:    mac 08:9e:01:e9:66:5a
+	    SysName:      PIONEERMS22
+	    SysDescr:     Cumulus Linux version 2.5.4 running on quanta lb9
+	    MgmtIP:       192.168.0.22
+	    Capability:   Bridge, on
+	    Capability:   Router, on
+	  Port:       
+	    PortID:       ifname swp47
+	    PortDescr:    swp47
+	-------------------------------------------------------------------------------
+	Interface:    swp1, via: LLDP, RID: 10, Time: 0 day, 17:08:27
+	  Chassis:    
+	    ChassisID:    mac 00:01:00:00:09:00
+	    SysName:      MSP-1
+	    SysDescr:     Cumulus Linux version 3.0.0 running on QEMU Standard PC (i440FX + PIIX, 1996)
+	    MgmtIP:       192.0.2.9
+	    MgmtIP:       fe80::201:ff:fe00:900
+	    Capability:   Bridge, off
+	    Capability:   Router, on
+	  Port:       
+	    PortID:       ifname swp1
+	    PortDescr:    swp1
+
+PTM - Prescriptive Topology Manager
+	In data center topologies, right cabling is a time-consuming 
+	endeavor and is error prone. Prescriptive Topology Manager (PTM)
+	is a dynamic cabling verification tool to help detect and eliminate
+	such errors. 
+
+LACP - Link Aggregation Control Protocol
+	To bundle several physical ports together to form a single logical channel.
+	LACP allows a switch to negotiate an automatic bundle by sending LACP
+	packets to the peer. 
+
+Bonding - Link Aggregation
+	Linux bonding provides a method for aggregating multiple network
+	interfaces (the slaves) into a single logical bonded interface (the bond).
+
+	Linear scaling of bandwidth as links are added to LAG
+	Load balancing
+	Failover protection
+
+Ethernet Bridging -VLANs
+	Ethernet bridges provide a means for hosts to communicate at layer 2.
+	Bridge members can be individual physical interfaces, bonds or logical
+	interfaces that traverse an 802.1Q VLAN  trunk.
+
+Path MTU Discovery
+	Path MTU Discovery (PMTUD) is a standardized technique in computer 
+	networking for determining the maximum transmission unit (MTU) size on
+	the network path between two Internet Protocol (IP) hosts, usually with
+	the goal of avoiding IP fragmentation. 
+
+	For IPv4 packets, Path MTU Discovery works by setting the Don't Fragment
+	(DF) flag bit in the IP headers of outgoing packets. Then, any device 
+	along the path whose MTU is smaller than the packet will drop it, and
+	send back an Internet Control Message Protocol (ICMP) Fragmentation 
+	Needed (Type 3, Code 4) message containing its MTU, allowing the source
+	host to reduce its Path MTU appropriately. The process is repeated until
+	the MTU is small enough to traverse the entire path without fragmentation.

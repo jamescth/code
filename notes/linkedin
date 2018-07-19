@@ -1,33 +1,130 @@
-All of the live debugging questions revolved around a simple website that had something broken in it. You were to fix the brokenness to be able to move on to the next page. In total there were 4 questions, each getting progressively more difficult to debug.
+All of the live debugging questions revolved around a simple
+website that had something broken in it. You were to fix the
+brokenness to be able to move on to the next page. In total
+there were 4 questions, each getting progressively more
+difficult to debug.
 
-The first question was a simple permissions problem on a file being requested by the client. The ownership of the file (a blank text file) was too restrictive, so it was raising an error. You could verify this in the apache web logs.
+The first question was a simple permissions problem on a
+file being requested by the client. The ownership of the
+file (a blank text file) was too restrictive, so it was
+raising an error. You could verify this in the apache web
+logs.
 
-The second error was due to a permission problem too, however this time the file was hidden in a sub directory of the main web site. You could only determine this by looking at the apache configuration file to see that the shtml file was located somewhere else. After that, change the permissions to fix.
+The second error was due to a permission problem too,
+however this time the file was hidden in a sub directory
+of the main web site. You could only determine this by
+looking at the apache configuration file to see that the 
+shtml file was located somewhere else. After that, change
+the permissions to fix.
 
-The third was a head scratcher. The filename in question was raising a 500 error and showing urlencoded characters in the filename in the web log. Looking at the name of the file on disk though, showed nothing out of the ordinary.
+The third was a head scratcher. The filename in question
+was raising a 500 error and showing urlencoded characters
+in the filename in the web log. Looking at the name of the
+file on disk though, showed nothing out of the ordinary.
 
-It turns out that the unicode representations for the characters in the file name are printed in the terminal as english ascii characters. The only way you can tell that this is the case is to open the file and do a search for the filename itself and see if it matches. For example, if the correct filename is called "challenge1.shtml" you can search for that exact string but NOT find the unicode version of it.
+It turns out that the unicode representations for the
+characters in the file name are printed in the terminal
+as english ascii characters. The only way you can tell
+that this is the case is to open the file and do a search
+for the filename itself and see if it matches. For example,
+if the correct filename is called "challenge1.shtml" you
+can search for that exact string but NOT find the unicode
+version of it.
 
-Once you find the incorrect file name, delete it and type the correct file name (in this case "challenge3.shtml" into the file and the page works.
+Once you find the incorrect file name, delete it and type
+the correct file name (in this case "challenge3.shtml" into
+the file and the page works.
 
-The final question was a segfault occurring in apache. It resulted in no information being returned to the client. You could see this occurring in the apache web logs as well as the Chrome tools.
+The final question was a segfault occurring in apache. It
+resulted in no information being returned to the client.
+You could see this occurring in the apache web logs as 
+well as the Chrome tools.
 
-The apache web logs noted that a core file was dumped. This challenge required that you know a little bit about gdb and C programming. Basically, you need to run the core dump through gdb.
+The apache web logs noted that a core file was dumped. This
+challenge required that you know a little bit about gdb and
+C programming. Basically, you need to run the core dump 
+through gdb.
 
     gdb /path/to/apache /path/to/core/dump
 
-It will spew out a lot of stuff. In particular, it mentions that there is something happening in an apache module; mod_rewrite or something...it doesnt really matter.
+It will spew out a lot of stuff. In particular, it mentions
+that there is something happening in an apache module;
+mod_rewrite or something...it doesnt really matter.
 
-The output also points to the C source file for that module which is, conveniently on disk. Open that file in vi and jump to the line number mentioned in the gdb output (line 1861 or something). There you will see that if the filename matches challenge4.shtml to SIGSEGV; there's your smoke gun.
+The output also points to the C source file for that module
+which is, conveniently on disk. Open that file in vi and
+jump to the line number mentioned in the gdb output 
+(line 1861 or something). There you will see that if the
+filename matches challenge4.shtml to SIGSEGV; there's your
+smoke gun.
 
-They dont ask you to fix the final challenge, only to explain what the strstr is doing. The error in question basically looks like this
+They dont ask you to fix the final challenge, only to
+explain what the strstr is doing. The error in question
+basically looks like this
 
 if (strstr($r-&gt;filename, "challenge4.shtml") != NULL) {
     SIGSEGV
 }
 
-Just point out to them that, yeah, it's segfaulting when I ask for that file.  
+Just point out to them that, yeah, it's segfaulting when I
+ask for that file.  
+
+*********************************************************************
+There was a paper presented to you with a number of nagios
+alerts and you had to rate them in the order you would approach
+fixing them.
+
+For example, one of them was a production host being 100% offline.
+
+Another was an environment alert about an entire cab that was
+overheating. Another was the tablet vip being down, another was
+a load average for the main website being really high.
+
+There were also a number of them that were QPS (queries per sec)
+related and included several security related alerts like XSS QPS
+and failed logins QPS
+
+Ans???
+Turn the cab off before you loose hardware. Get production server
+back online. Questions whether the XSS or high QPS are responsible
+for the down prod server and address those next with whatever 
+security process is currently in place. Fix VIP tablet.
+
+prioritize:
+
+what's the impact if it goes wrong? size of the impact
+what's the potential RCA time for each case?
+how often do we see the symptoms? what was the resolution before?
+
+based on the known info, here is the suggestions:
+
+the cab is over heating, the reason is unknown. the impact will be
+lose all the servers/appliances in the cab. if the tempurature does
+not come down.
+
+*********************************************************************
 
 ltrace, strace, curl
 check logs
 change loglevel
+
+1. Software engineering 
+	2-4 python scripts 
+	review comments
+
+2. Internet Response module (on call pratice)
+	log, timeline
+	priority
+	postmodern report
+
+3. Live Trouble Shooting
+	Apache WebServer
+
+4. Service Architecture Desing
+	such as Youtube
+
+5. Lunch w/ engineers
+	questions for SREs
+
+6. One on One w/ hiring manager
+

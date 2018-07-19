@@ -1,0 +1,35 @@
+https://www.tomshardware.com/reviews/ssd-gaming-performance,2991-3.html
+
+IOPS and Throughput
+
+The term IOPS stands for input/output operations per second
+
+If a benchmark isn’t presenting results in IOPS, the other
+likely candidate is MB/s (throughput). These two units have
+a direct relationship, as average transfer size * IOPS = MB/s.
+
+IOPS - can also translate to response time
+
+However, most workloads are a mixture of different transfer
+sizes, which is why the storage ninjas in IT prefer IOPS.
+Queue depth refers to the number of outstanding access operations.
+
+Queue Depth
+
+Queue depth refers to the number of outstanding access operations.
+In the picture above, each solid line represents one disk operation,
+which can be either a read or write. Because three operations 
+overlap in the same period, there’s a queue depth of three.
+
+They are built out of multiple Flash chips. It is simplistic to
+say that they are RAID 0 inside, but it is somewhat similar. A 
+queue of requests can be serviced from multiple Flash chips at 
+the same time.
+
+Flash is so fast that the latency between responding to a request
+and getting a new request is a significant part of the process.
+With a hard disk that reponse/request latency is insignificant 
+compared to rotational delay and head seek time. But with an SSD 
+that waiting is a much larger percentage. Having a queue of
+requests gives the SSD more work to do after it responds to
+earlier work.

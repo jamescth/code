@@ -108,9 +108,34 @@ How does the Linux kernel run a program
 	. reads shell environments
 	. load .bashrc, .profile and other configuration files
 	. ...
+	vfork()
 	in the end, the shell_execve calls execvc()
 
 	int execve(const char *filename, char *const argv [], char *const envp[]);
+
+	 The ELF is opened
+	 the kernel looks for the .text section and loads it into memory, marks it readonly
+	 the kernel loads the .data section
+	 the kernel loads the .bss section, and initialization all the content to zero
+	 the kernel transfers the control to the dynamic linker. The linker resolves all the shared library calls
+	 the control is transferred to the application.
+
+	 the function _start gets invoked.
+	 	the address of the actual main function
+		the argc address
+		the argv address
+		the address of _init
+		the address of _fini
+		a func pointer for the atexit() registration
+		the highest stack address available
+	_init gets called
+		calls call_gmon_start to initialize gmon profiling
+		calls frame_dummy
+		calls __do_global_ctros_aus
+	call main
+	main exits
+	_fini get called, which returns calls_do_global_dtors_aux
+	the program exits
 
 execve system call
 	SYSCALL_DEFINE3(execve,
