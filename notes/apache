@@ -1,4 +1,202 @@
 https://httpd.apache.org/docs/trunk/getting-started.html
+https://www.digitalocean.com/community/tutorials/how-to-troubleshoot-common-site-issues-on-a-linux-server
+https://likegeeks.com/linux-web-server/
+http://www.linuxhomenetworking.com/wiki/index.php/Quick_HOWTO_:_Ch20_:_The_Apache_Web_Server#.W1DBodJKhPY
+
+*******************************************************************************************************
+https://www.digitalocean.com/community/tutorials/how-to-troubleshoot-common-site-issues-on-a-linux-server
+Restart Apache
+	Debian & Ubuntu:
+		sudo service apache2 restart
+	fedora & CentOS
+		sudo service httpd restart
+
+ehck logs
+	Debian
+		tail -f /var/log/apache2/error.log
+		tail -f /var/log/apache2/access.log
+	Fedora
+		tail -f /var/log/httpd/error_log
+		tail -f /var/log/httpd/access_log
+	sudo service apache2 restart
+
+	set it back to warn afterward
+
+Enable Verbose Logs
+	sudo vim /etc/apache2/apache2.conf / /etc/hpptd/hpptd.conf
+		=> LogLevel debug
+
+chekc apache configuration syntax
+	apache2ctl -t
+	httpd -t
+
+check virtual host definitions
+	apache2ctl -S
+	httpd -S
+*******************************************************************************************************
+http://www.linuxhomenetworking.com/wiki/index.php/Quick_HOWTO_:_Ch20_:_The_Apache_Web_Server#.W1DBodJKhPY
+Configuring DNS for Apache
+DHCP for Apache
+General Configuration Steps
+	where to put your web pages
+		servername: Defines the name of the website managed by the <VirtualHost> container.
+			This is needed in named virtual hosting only, as I'll explain soon.
+		DocumentRoot: Defines the directory in which the web pages for the site can be found.
+
+		By default, Apache searches the DocumentRoot directory for an index, or home, page
+		named index.html. So for example, if you have a servername of www.my-site.com with
+		a DocumentRoot directory of /home/www/site1/, Apache displays the contents of the
+		file /home/www/site1/index.html when you enter http://www.my-site.com in your browser.
+
+		cd /home/www/site1
+		[root@bigboy site1]# ln -s index.htm index.html
+		[root@bigboy site1]# ll index.*
+		-rw-rw-r--    1 root     root        48590 Jun 18 23:43 index.htm
+		lrwxrwxrwx    1 root     root            9 Jun 21 18:05 index.html -> index.htm
+
+	The Default File Location
+		By default, Apache expects to find all its web page files in the /var/www/html/
+		directory with a generic DocumentRoot statement at the beginning of httpd.conf.
+
+	File Permissions and Apache
+		Apache will display Web page files as long as they are world readable. You have
+		to make sure you make all the files and subdirectories in your DocumentRoot
+		have the correct permissions.
+
+		It is a good idea to have the files owned by a nonprivileged user so that Web 
+		developers can update the files using FTP or SCP without requiring the root
+		password. To do this:
+
+		Create a user with a home directory of /home/www.
+		Recursively change the file ownership permissions of the /home/www directory 
+		and all its subdirectories.
+		Change the permissions on the /home/www directory to 755, which allows all 
+		users, including the Apache's httpd daemon, to read the files inside.
+
+		[root@bigboy tmp]# useradd -g users www
+		[root@bigboy tmp]# chown -R www:users /home/www
+		[root@bigboy tmp]# chmod 755 /home/www
+		Now we test for the new ownership with the ll command.
+
+		[root@bigboy tmp]# ll /home/www/site1/index.*
+		-rw-rw-r--    1 www     users       48590 Jun 25 23:43 index.htm
+		lrwxrwxrwx    1 www     users           9 Jun 25 18:05 index.html -> index.htm
+
+	Security Contexts for Web Pages
+		Table 20-1 SELinux Security Context File Labels
+		Context Code	Description
+		httpd_sys_content_t	The type used by regular static web pages with .html and .htm extensions.
+		httpd_sys_script_ro_t	Required for CGI scripts to read files and directories.
+		httpd_sys_script_ra_t	Same as the httpd_sys_script_ro_t type but also allows appending data to files by the CGI script.
+		httpd_sys_script_rw_t	Files with this type may be changed by a CGI script in any way, including deletion.
+		httpd_sys_script_exec_t	The type required for the execution of CGI scripts
+
+		Using the ls -Z command, you can see that the user_home_t security label has been assigned
+		to the directory and the index.html page created in it. This label is not accessible by Apache.
+
+			[root@bigboy tmp]# mkdir /home/www/site1
+			[root@bigboy tmp]# ls -Z /home/www/
+			drwxr-xr-x  root     root     root:object_r:user_home_t    site1
+			[root@bigboy tmp]# touch /home/www/site1/index.html
+			[root@bigboy tmp]# ls -Z /home/www/site1/index.html
+			-rw-r--r--  root     root     root:object_r:user_home_t        /home/www/site1/index.html
+			[root@bigboy tmp]#
+
+		Accessing the index.html file via a Web browser gets a "Forbidden 403" error on your screen,
+		even though the permissions are correct. Viewing the /var/log/httpd/error_log gives a
+		"Permission Denied" message and the /var/log/messages file shows kernel audit errors.
+
+			[root@bigboy tmp]# tail /var/log/httpd/error_log 
+			[Fri Dec 24 17:59:24 2004] [error] [client 216.10.119.250] (13)Permission denied: access to / denied
+
+			[root@bigboy tmp]# tail /var/log/messages
+			Dec 24 17:59:24 bigboy kernel: audit(1103939964.444:0): avc:   denied  { getattr } for  pid=2188 
+			exe=/usr/sbin/httpd path=/home/www/site1 dev=hda5 ino=73659 scontext=system_u:system_r:httpd_t
+			tcontext=root:object_r:user_home_t tclass=dir
+
+			[root@bigboy tmp]#
+		
+		Recognizing the error, user root uses chcon with the -R (recursive) and -h (modify symbolic links)
+		qualifiers to modify the label of the directory to httpd_sys_content_t with the -t qualifier.
+
+			[root@bigboy tmp]# chcon -R -h -t httpd_sys_content_t /home/www/site1
+			[root@bigboy tmp]# ls -Z /home/www/site1/
+			-rw-r--r--  root     root     root:object_r:httpd_sys_content_t index.html
+
+		User root won't have to run the chcon command again for the directory, because new files created 
+		in the directory will inherit the SELinux security label of the parent directory. You can see
+		this when the file /home/www/site1/test.txt is created.
+
+			[root@bigboy tmp]# touch /home/www/site1/test.txt
+			[root@bigboy tmp]# ls -Z /home/www/site1/ 
+			-rw-r--r--  root     root     root:object_r:httpd_sys_content_t index.html
+			-rw-r--r--  root     root     root:object_r:httpd_sys_content_t test.txt
+
+	Testing Your Website Before DNS Is Fixed
+		modify /etc/hosts to add DNS info
+			97.158.253.26          www.my-site.com
+
+	Handling Missing Pages
+
+	Troubleshooting Apache
+		1. Testng Basic HTTP Connectivity
+		2. Browser 403 Forbidden Messages
+			A sure sign of problems related to security context are "avc: denied" messages
+			in your /var/log/messages log file.
+
+			Nov 21 20:41:23 bigboy kernel: audit(1101098483.897:0): avc:  denied  
+			{ getattr } for  pid=1377 exe=/usr/sbin/httpd path=/home/www/index.html dev=hda5
+			ino=12 scontext=root:system_r:httpd_t tcontext=root:object_r:home_root_t tclass=file
+
+		3. Only the Default Apache Page Appears
+			a. The first is the lack of an index.html file in your Web site's DocumentRoot directory. 
+			b.  an incorrect security context for the Web page's file.
+
+		4. Incompatible httpd.conf Files When Upgrading
+
+	Server Name Errors
+		All ServerName directives must list a domain that is resolvable in DNS, or else you'll get an
+		error similar to these when starting httpd.
+
+		Starting httpd: httpd: Could not determine the server's fully qualified domain name, 
+		using 127.0.0.1 for ServerName
+
+		Starting httpd: [Wed Feb 04 21:18:16 2004] [error] (EAI 2)Name or service not known: Failed 
+		to resolve server name for 192.16.1.100 (check DNS) -- or specify an explicit ServerName
+
+		Solution:
+		You can avoid this by adding a default generic ServerName directive at the top of the 
+		httpd.conf file that references localhost instead of the default new.host.name:80.
+
+			#ServerName new.host.name:80
+			ServerName localhost
+
+	Apache Log File Format
+		Field Number	Description							Separator
+		1		IP Address of the remote web surfer				Spaces
+		2		Time Stamp							Square Brackets []
+		3		HTTP query including the web page served			Quotes ""
+		4		HTTP result code						Spaces
+		5		The amount of data in bytes sent to the remote web browser	Spaces
+		6		The web page that contained the link to the page served.	Quotes ""
+		7		The version of the web browser used to get the page		Quotes ""
+
+	HTTP Status Codes
+	HTTP Code	Description
+	200		Successful request
+	304		Successful request, but the web page requested hasn't been modified since the
+			current version in the remote web browser's cache. This means the web page 
+			will not be sent to the remote browser, it will just use its cached version 
+			instead. Frequently occurs when a surfer is browsing back and forth on a site.
+	401		Unauthorized access. Someone entered an incorrect username / password on a
+			password protected page.
+	403		Forbidden. File permissions or contexts prevents Apache from reading the 
+			file. Often occurs when the web page file is owned by user "root" even though
+			it has universal read access.
+	404		Not found. Page requested doesn't exist.
+	500		Internal server error. Frequently generated by CGI scripts that fail due to bad
+			syntax. Check your error_log file for further details on the script's error message.
+*******************************************************************************************************
 
 https://linuxgazette.net/132/vishnu.html
 
@@ -90,6 +288,110 @@ $ sudo strace -f -o /tmp/trace.txt /etc/init.d/apache2 start
 $ ltrace -f -o /tmp/ltrace.txt /etc/init.d/apache2 start
 "/etc/init.d/apache2" is not an ELF file
 
+The default Ubuntu document root is /var/www/html
+
+ The configuration layout for an Apache2 web server installation on Ubuntu systems is as follows:
+
+/etc/apache2/
+|-- apache2.conf
+|       `--  ports.conf
+|-- mods-enabled
+|       |-- *.load
+|       `-- *.conf
+|-- conf-enabled
+|       `-- *.conf
+|-- sites-enabled
+|       `-- *.conf
+
+./envvars:export APACHE_LOG_DIR=/var/log/apache2$SUFFIX
+$ tail -f /var/log/apache2/error.log 
+
+
+https://www.digitalocean.com/community/tutorials/how-to-troubleshoot-common-site-issues-on-a-linux-server
+
+check syntax
+$ apache2ctl configtest 
+AH00558: apache2: Could not reliably determine the server's fully qualified domain name, using 127.0.1.1. Set the 'ServerName' directive globally to suppress this message
+Syntax OK
+
+check configured port open
+sudo nc -z 111.111.111.111 80
+if return right away, it's open
+
+s$ sudo lsof -n | grep apache | grep http
+lsof: WARNING: can't stat() fuse.gvfsd-fuse file system /run/user/120/gvfs
+      Output information may be incomplete.
+lsof: WARNING: can't stat() fuse.gvfsd-fuse file system /run/user/1000/gvfs
+      Output information may be incomplete.
+apache2   19346                  root    4u     IPv6             121597       0t0        TCP *:http (LISTEN)
+apache2   19347              www-data    4u     IPv6             121597       0t0        TCP *:http (LISTEN)
+apache2   19347 19370        www-data    4u     IPv6             121597       0t0        TCP *:http (LISTEN)
+apache2   19347 19371        www-data    4u     IPv6             121597       0t0        TCP *:http (LISTEN)
+apache2   19347 19372        www-data    4u     IPv6             121597       0t0        TCP *:http (LISTEN)
+...
+
+
+/etc/apache2$ gvim ./apache2.conf
+...
+# Sets the default security model of the Apache2 HTTPD server. It does
+# not allow access to the root filesystem outside of /usr/share and /var/www.
+# The former is used by web applications packaged in Debian,
+# the latter may be used for local directories served by the web server. If
+# your system is serving content from a sub-directory in /srv you must allow
+# access here, or in any related virtual host.
+<Directory />
+	Options FollowSymLinks
+	AllowOverride None
+	Require all denied
+</Directory>
+
+<Directory /usr/share>
+	AllowOverride None
+	Require all granted
+</Directory>
+
+<Directory /var/www/>
+	Options Indexes FollowSymLinks
+	AllowOverride None
+	Require all granted
+</Directory>
+
+
+Make sure configuration Files also handle Domain Correctly
+Does the Document Root point to the location of your Files?
+
+	/etc/apache2$ gvim ./sites-enabled/000-default.conf
+	<VirtualHost *:80>
+		# The ServerName directive sets the request scheme, hostname and port that
+		# the server uses to identify itself. This is used when creating
+		# redirection URLs. In the context of virtual hosts, the ServerName
+		# specifies what hostname must appear in the request's Host: header to
+		# match this virtual host. For the default virtual host (this file) this
+		# value is not decisive as it is used as a last resort host regardless.
+		# However, you must set it for any further virtual host explicitly.
+		#ServerName www.example.com
+
+		ServerAdmin webmaster@localhost
+		DocumentRoot /var/www/html
+
+		# Available loglevels: trace8, ..., trace1, debug, info, notice, warn,
+		# error, crit, alert, emerg.
+		# It is also possible to configure the loglevel for particular
+		# modules, e.g.
+		#LogLevel info ssl:warn
+
+		ErrorLog ${APACHE_LOG_DIR}/error.log
+		CustomLog ${APACHE_LOG_DIR}/access.log combined
+
+		# For most configuration files from conf-available/, which are
+		# enabled or disabled at a global level, it is possible to
+		# include a line for only one particular virtual host. For example the
+		# following line enables the CGI configuration for this host only
+		# after it has been globally disabled with "a2disconf".
+		#Include conf-available/serve-cgi-bin.conf
+	</VirtualHost>
+
+	# vim: syntax=apache ts=4 sw=4 sts=4 sr noet
 **********************************************************************************************************
 
 $ pstree -p | grep apache
