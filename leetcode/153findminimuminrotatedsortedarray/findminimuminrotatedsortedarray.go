@@ -1,21 +1,21 @@
 package main
 
 func findMin(nums []int) int {
-	if nums == nil {
-		return 0
-	}
-	l := len(nums)
-	if l == 1 {
-		return nums[0]
+	L := len(nums)
+	if L == 0 {
+		return -1
 	}
 
-	i, min := 1, nums[0]
-	for i < l {
-		if nums[i] < min {
-			min = nums[i]
+	left, right := 0, L-1
+
+	for left < right {
+		mid := (left + right) / 2
+		if nums[mid] > nums[right] {
+			left = mid + 1
+		} else {
+			right = mid
 		}
-
-		i++
 	}
-	return min
+
+	return nums[right]
 }

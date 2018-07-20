@@ -1,3 +1,5 @@
+Sort, recursive, two ends, heap, hash
+
 
 
 For a given set of software checkins, write a 
@@ -43,6 +45,9 @@ SSH Port = 22
 FTP = 21
 
 Given a list of words, create a master list that has sublists that contain anagrams.
+	what defines an anagram: two words are anagrams of each other if they consist
+	of the same set of letters and each letter appears exactly the same number or
+	time in both words. 
 
 Simple comparison between numbers given constraints see how many comparisons are true. 
 

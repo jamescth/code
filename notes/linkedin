@@ -1,3 +1,50 @@
+*********************************************************************
+ltrace, strace, curl
+check logs
+change loglevel
+
+1. Software engineering 
+	2-4 python scripts 
+	review comments
+
+	correctionness checks
+	variable scope
+	exit checks
+	boundry checks
+	exception checks
+	readability
+	runtime, storage complexity
+
+2. Internet Response module (on call pratice)
+	log, timeline
+	priority
+	postmodern report
+
+	prioritize:
+	what's the impact if it goes wrong or not fixing it right away? size of the impact
+		do we have a workaround?
+	what's the potential RCA time for each case?
+	how often do we see the symptoms? what was the resolution before?
+
+	based on the known info, here is the suggestions:
+
+	the cab is over heating, the reason is unknown. the impact will be
+	lose all the servers/appliances in the cab. if the tempurature does
+	not come down.
+
+3. Live Trouble Shooting
+	Apache WebServer
+
+4. Service Architecture Desing
+	such as Youtube
+
+5. Lunch w/ engineers
+	questions for SREs
+
+6. One on One w/ hiring manager
+
+*********************************************************************
+
 All of the live debugging questions revolved around a simple
 website that had something broken in it. You were to fix the
 brokenness to be able to move on to the next page. In total
@@ -103,28 +150,4 @@ lose all the servers/appliances in the cab. if the tempurature does
 not come down.
 
 *********************************************************************
-
-ltrace, strace, curl
-check logs
-change loglevel
-
-1. Software engineering 
-	2-4 python scripts 
-	review comments
-
-2. Internet Response module (on call pratice)
-	log, timeline
-	priority
-	postmodern report
-
-3. Live Trouble Shooting
-	Apache WebServer
-
-4. Service Architecture Desing
-	such as Youtube
-
-5. Lunch w/ engineers
-	questions for SREs
-
-6. One on One w/ hiring manager
 
