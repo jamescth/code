@@ -1,0 +1,70 @@
+********************************************************************
+Setup python as cgi script
+
+https://www.raspberrypi.org/forums/viewtopic.php?t=155229
+
+2. Enable mods in apache2 for cgi (the codes below showed two ways to do it)
+
+	sudo a2enmod cgid
+	cd /etc/apache2/mods-enabled
+
+3. Modify the config file: /etc/apache2/conf-enabled/serve-cgi-bin.conf to enable python code.
+
+	<Directory "usr/lib/cgi-bin">
+             ... ...
+
+             AddHandler cgi-script .py          # add this line (there is a blank between cgi-script and .py)
+	</Directory>
+
+4. Notice that the default directory for cgi script is /usr/lib/cgi-bin/, so we will create a test file under this directory.
+
+	sudo nano /usr/lib/cgi-bin/pytest.py
+
+		#!/usr/bin/python
+
+		import cgi
+		import cgitb
+		cgitb.enable()
+
+		print 'Content-type: text/html\n\n'
+		print '<h1>Python Script Test</h1>'
+
+5. Make the python file executable
+
+	sudo chmod +x /usr/lib/cgi-bin/pytest.py
+
+6. Restart the apache2 service
+	sudo service apache2 restart
+
+7.  'localhost/cgi-bin/pytest.py' 
+
+
+********************************************************************
+$ ps auxw | grep sbin/apache
+root     25008  0.0  0.0  76072  4496 ?        Ss   11:36   0:00 /usr/sbin/apache2 -k start
+www-data 25009  0.0  0.0  80184  4200 ?        S    11:36   0:00 /usr/sbin/apache2 -k start
+www-data 25010  0.0  0.0 1287192 4616 ?        Sl   11:36   0:00 /usr/sbin/apache2 -k start
+www-data 25011  0.0  0.0 1287192 4616 ?        Sl   11:36   0:00 /usr/sbin/apache2 -k start
+james    25141  0.0  0.0  21536  1008 pts/2    S+   11:43   0:00 grep --color=auto sbin/apache
+
+$ sudo strace -f -p 25009 -o /tmp/trace.txt
+strace: Process 25009 attached
+strace: Process 25155 attached
+^Cstrace: Process 25009 detached
+
+/tmp/trace.out
+25155 write(2, "Traceback (most recent call last"..., 35) = 35
+25155 write(2, "  File \"/usr/lib/cgi-bin/pytest."..., 57) = 57
+25155 openat(AT_FDCWD, "/usr/lib/cgi-bin/pytest.py", O_RDONLY) = 3
+25155 fstat(3, {st_mode=S_IFREG|0755, st_size=158, ...}) = 0
+25155 read(3, "#!/usr/bin/python\n\nimport cgi\nim"..., 4096) = 158
+25155 write(2, "    ", 4)               = 4
+25155 write(2, "raise Exception('Hello')\n", 25) = 25
+25155 close(3)                          = 0
+25155 write(2, "Exception", 9)          = 9
+25155 write(2, ": ", 2)                 = 2
+25155 write(2, "Hello", 5)              = 5
+25155 write(2, "\n", 1)                 = 1
+25155 rt_sigaction(SIGINT, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=SA_RESTORER, sa_restorer=0x7f4441f4bf20}, {sa_handler=0x55f6cad08dd0, sa_mask=[], sa_flags=SA_RESTORER, sa_restorer=0x7f4441f4bf20}, 8) = 0
+25155 close(7)                          = 0
+

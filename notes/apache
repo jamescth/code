@@ -3,6 +3,41 @@ https://www.digitalocean.com/community/tutorials/how-to-troubleshoot-common-site
 https://likegeeks.com/linux-web-server/
 http://www.linuxhomenetworking.com/wiki/index.php/Quick_HOWTO_:_Ch20_:_The_Apache_Web_Server#.W1DBodJKhPY
 
+how to fix HTTP error code "500"
+https://www.1and1.com/cloud-community/learn/web-server/server-management/how-to-fix-http-error-code-500-internal-server-error/
+
+$ ps -aux | grep apache
+root     19346  0.0  0.0  73968  5224 ?        Ss   Jul19   0:05 /usr/sbin/apache2 -k start
+www-data 23026  0.0  0.0 1285008 4784 ?        Sl   07:30   0:00 /usr/sbin/apache2 -k start
+www-data 23027  0.0  0.0 1285008 4784 ?        Sl   07:30   0:00 /usr/sbin/apache2 -k start
+
+$ sudo netstat -ntpl | grep apache
+tcp6       0      0 :::80                   :::*                    LISTEN      19346/apache2
+
+s$ curl 10.0.2.15 | more
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100 10918  100 10918    0     0  10.4M      0 --:--:-- --:--:-- --:--:-- 10.4M
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-tr
+ansitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+$ apachectl -S
+AH00558: apache2: Could not reliably determine the server's fully qualified domain name, using 127.0.1.1. Set the 'ServerName' directive globally to suppress this message
+VirtualHost configuration:
+*:80                   127.0.1.1 (/etc/apache2/sites-enabled/000-default.conf:1)
+ServerRoot: "/etc/apache2"
+Main DocumentRoot: "/var/www/html"
+Main ErrorLog: "/var/log/apache2/error.log"
+Mutex default: dir="/var/run/apache2/" mechanism=default 
+Mutex watchdog-callback: using_defaults
+PidFile: "/var/run/apache2/apache2.pid"
+Define: DUMP_VHOSTS
+Define: DUMP_RUN_CFG
+User: name="www-data" id=33 not_used
+Group: name="www-data" id=33 not_used
+
 *******************************************************************************************************
 https://www.digitalocean.com/community/tutorials/how-to-troubleshoot-common-site-issues-on-a-linux-server
 Restart Apache
