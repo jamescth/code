@@ -3,6 +3,16 @@ https://www.digitalocean.com/community/tutorials/how-to-troubleshoot-common-site
 https://likegeeks.com/linux-web-server/
 http://www.linuxhomenetworking.com/wiki/index.php/Quick_HOWTO_:_Ch20_:_The_Apache_Web_Server#.W1DBodJKhPY
 
+*************************************************
+/usr/lib/cgi-bin$ sudo -u www-data ./pytest.py 
+Content-type: text/html
+<h1>Python Script Test</h1>
+
+james@jbox:/usr/lib/cgi-bin$ sudo chmod 700 ./pytest.py 
+james@jbox:/usr/lib/cgi-bin$ sudo -u www-data ./pytest.py 
+sudo: unable to execute ./pytest.py: Permission denied
+
+*************************************************
 how to fix HTTP error code "500"
 https://www.1and1.com/cloud-community/learn/web-server/server-management/how-to-fix-http-error-code-500-internal-server-error/
 
