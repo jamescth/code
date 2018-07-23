@@ -1,0 +1,50 @@
+Permission to access CGI
+	$ curl localhost/test.cgi
+	<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
+	<html><head>
+	<title>403 Forbidden</title>
+	</head><body>
+	<h1>Forbidden</h1>
+	<p>You don't have permission to access /test.cgi
+	on this server.<br />
+	</p>
+	<hr>
+	<address>Apache/2.4.29 (Ubuntu) Server at localhost Port 80</address>
+	</body></html>
+
+	<Directory /var/www/>
+		Options Indexes FollowSymLinks Includes ExecCGI
+		AllowOverride None
+		Require all granted
+		Order allow,deny
+		allow from all
+		AddType text/html .shtml
+		AddOutputFilter INCLUDES .shtml
+	</Directory>
+
+
+SELinux Configuration
+	ls -alZ
+
+	chcon -t httpd_sys_script_exec_t test.cgi
+
+not able to run Server-Side Includes
+
+AH00082: an unknown filter was not added: includes
+
+need to make sure the to include "include" in apache2
+	$ sudo a2enmod include
+	Considering dependency mime for include:
+	Module mime already enabled
+	Enabling module include.
+	To activate the new configuration, you need to run:
+	  systemctl restart apache2
+	james@jbox:/var/www/html$ systemctl restart apache2
+	james@jbox:/var/www/html$ curl localhost/index.shtml
+	<!DOCTYPE html>
+
+	<html>
+	<h1> Running SHTML</h1>
+	Monday, 23-Jul-2018 12:48:04 PDT
+	</html>
+
