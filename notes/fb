@@ -6,6 +6,18 @@ For a given set of software checkins, write a
 program that will determine which part along 
 the branch where the fault lies.  
 
+Talk about an iostat output (what does user vs system cpu load mean,
+what does iowait% mean, cache vs buffers, why do we need caching,
+how much cache is needed, how can disk performance be improved,
+where is the bottleneck)
+How do TCP, UDP work? Describe what happens when a client opens
+a web page. How does DNS work? How does HTTP work? How does a
+router work?
+Various questions about your current experience, talk about a
+conflict situation and how you handled it.
+How would you design a system that manipulates content sent
+from a client (e.g. clean bad words in a comment post)?
+
 Write a function to sort a list of integers that looks
 like this [5,2,0,3,0,1,6,0] -&gt; [1,2,3,5,6,0,0,0]
 in the most efficient way.
@@ -38,9 +50,9 @@ Explain everything that happens over the network when a client tries to access a
 
 Explain in every single step about what will happen after you type " ls * " in your terminal.
 
-HTTP port =
-HTTPs Port =
-DNS port =
+HTTP port = 80
+HTTPs Port = 443
+DNS port = 43
 SSH Port = 22
 FTP = 21
 
