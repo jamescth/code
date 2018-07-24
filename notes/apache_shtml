@@ -30,21 +30,52 @@ SELinux Configuration
 
 not able to run Server-Side Includes
 
-AH00082: an unknown filter was not added: includes
+	AH00082: an unknown filter was not added: includes
 
-need to make sure the to include "include" in apache2
-	$ sudo a2enmod include
-	Considering dependency mime for include:
-	Module mime already enabled
-	Enabling module include.
-	To activate the new configuration, you need to run:
-	  systemctl restart apache2
-	james@jbox:/var/www/html$ systemctl restart apache2
-	james@jbox:/var/www/html$ curl localhost/index.shtml
+	need to make sure the to include "include" in apache2
+		$ sudo a2enmod include
+		Considering dependency mime for include:
+		Module mime already enabled
+		Enabling module include.
+		To activate the new configuration, you need to run:
+		  systemctl restart apache2
+		james@jbox:/var/www/html$ systemctl restart apache2
+		james@jbox:/var/www/html$ curl localhost/index.shtml
+		<!DOCTYPE html>
+
+		<html>
+		<h1> Running SHTML</h1>
+		Monday, 23-Jul-2018 12:48:04 PDT
+		</html>
+
+apache2.conf
+<Directory /var/www/>
+	Options Indexes FollowSymLinks Includes ExecCGI
+	AllowOverride None
+	Require all granted
+	Order allow,deny
+	allow from all
+	# AddType text/html .shtml		<= define in mime.conf
+	# AddOutputFilter INCLUDES .shtml
+</Directory>
+
+index.shtml
 	<!DOCTYPE html>
 
 	<html>
 	<h1> Running SHTML</h1>
-	Monday, 23-Jul-2018 12:48:04 PDT
+	<!--#echo var="DATE_LOCAL" -->
+	<!--#include file="test.cgi" -->
 	</html>
+
+$ cat test.cgi
+	#!/usr/bin/python
+	with open('hello') as f:
+		f.readline()
+
+	print("Content-Type: text/html\n")
+	print("<!DOCTYPE html>")
+	print("<html>")
+	print("<h1>CGI Works!</h1>")
+	print("</html>")
 
