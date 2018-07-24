@@ -98,3 +98,23 @@ Binary tree traversal
 
 Given a list of integers, output all subsets of size three, which sum to zero.  
 
+
+***********************************************************************************
+missing number
+	sum - (n * (n+1) /2)
+
+house-robber
+	func rob(nums []int) int {
+		// a 对于偶数位上的最大值的记录
+		// b 对于奇数位上的最大值的记录
+		var a, b int
+		for i, v := range nums {
+			if i%2 == 0 {
+				a = max(a+v, b)
+			} else {
+				b = max(a, b+v)
+			}
+		}
+
+		return max(a, b)
+	}
