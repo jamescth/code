@@ -164,6 +164,25 @@ fabonacci
 	return b
 
 BST 
+	096 Unique BST
+		G(n) = G(0)*G(n-1) + G(1) * G(n-2) ... + G(n-1)*G(0)
+
+		    var ret []int = make([]int, n+1)
+		    if n == 0 || n == 1{
+		        return n
+		    }
+		    ret[0] = 1
+		    for i, _ := range ret {
+		        if i == 0 {
+		            continue
+		        }
+        
+		        for j := 0; j<i ; j++ {
+		            ret[i] += ret[j] * ret[i-1-j]
+		        }
+		   }
+		   return ret[n]
+
 	278 first bad version
 	lowest common ancestor bst
 	101 Symmetric Tree

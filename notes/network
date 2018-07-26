@@ -389,3 +389,15 @@ Path MTU Discovery
 	Needed (Type 3, Code 4) message containing its MTU, allowing the source
 	host to reduce its Path MTU appropriately. The process is repeated until
 	the MTU is small enough to traverse the entire path without fragmentation.
+
+Virtual Extensible LAN - VxLAN
+	is a proposed encapsulation protocol for running an overlay network
+	on existing Layer 3 infrastructure. An overlay network is a virtual
+	network that is built on top of existing network Layer 2 and Layer 3
+	to support elastic compute architectures
+
+Border Gateway Protocol - BGP
+	is a standardized exterior gateway protocol to exhange routing 
+	and reachability information among systems (AS) on the internet.
+	The protocol is classified as a path vector protocol.
+
