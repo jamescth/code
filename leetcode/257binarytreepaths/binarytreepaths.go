@@ -1,6 +1,10 @@
 package main
 
-import "strconv"
+import (
+	"strconv"
+
+	. "github.com/jamescth/code/leetcode/treenode"
+)
 
 func binaryTreePaths(root *TreeNode) []string {
 	if root == nil {

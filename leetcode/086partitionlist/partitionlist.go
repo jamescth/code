@@ -1,5 +1,9 @@
 package main
 
+import (
+	. "github.com/jamescth/code/leetcode/util"
+)
+
 func partition(head *ListNode, x int) *ListNode {
 	if head == nil || head.Next == nil {
 		return head

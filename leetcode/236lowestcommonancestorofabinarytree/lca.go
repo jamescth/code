@@ -1,5 +1,9 @@
 package main
 
+import (
+	. "github.com/jamescth/code/leetcode/treenode"
+)
+
 func lca(root *TreeNode, p, q int) *TreeNode {
 	// if looking for me, return self
 	if root.Val == p || root.Val == q {
@@ -10,7 +14,7 @@ func lca(root *TreeNode, p, q int) *TreeNode {
 
 	// look for both childs
 	if root.Left != nil {
-		left = lca(root.left, p, q)
+		left = lca(root.Left, p, q)
 	}
 	if root.Right != nil {
 		right = lca(root.Right, p, q)

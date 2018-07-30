@@ -1,4 +1,4 @@
-package kthsmallestelementbst
+package main
 
 import (
 	"testing"
