@@ -1,0 +1,20 @@
+>>> def _():
+...   class Base:
+...     pass
+... 
+>>> dis(_)
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+NameError: name 'dis' is not defined
+>>> from dis import dis
+>>> dis(_)
+  2           0 LOAD_BUILD_CLASS
+              2 LOAD_CONST               1 (<code object Base at 0x7ffa87d73ed0, file "<stdin>", line 2>)
+              4 LOAD_CONST               2 ('Base')
+              6 MAKE_FUNCTION            0
+              8 LOAD_CONST               2 ('Base')
+             10 CALL_FUNCTION            2
+             12 STORE_FAST               0 (Base)
+             14 LOAD_CONST               0 (None)
+             16 RETURN_VALUE
+
