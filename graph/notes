@@ -1,0 +1,35 @@
+https://medium.com/tebs-lab/breadth-first-search-and-depth-first-search-4310f3bf8416
+
+BFS(graph, start_node, end_node):
+	frontier = new Queue()
+	frontier.enqueue(start_node)
+	explored = new Set()
+
+	while frontier is not empty:
+		current_node = frontier.dequeue()
+		if current_node in explored:
+			continue
+		if current_node == end_end
+			return success
+
+		for neighbor in graph.get_neighbors(current_node):
+			frontier.enqueue(neighbor)
+
+		explored.add(current_node)
+
+DFS(graph, start_node, end_node):
+	frontier = new Stack()
+	frontier.push(start_node)
+	explored = new Set()
+
+	while frontier is not empty:
+		current_node = frontier.pop()
+		if current_node in explored
+			continue
+		if current_node == end_node
+			return success
+
+		for neighbor in graph.get_neighbors(current_node)
+			frontier.push(neighbor)
+
+		explored.add(current_node)
