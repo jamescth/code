@@ -1,3 +1,11 @@
+https://discuss.codechef.com/t/how-to-find-subset-of-an-array/16275/2
+a = [1,2,3]
+subsets = [],[1],[2],[3],[1,2],[2,3],[1,3],[1,2,3]
+=> 000, 001, 010, 011, 100, 101, 110, 111
+=> 2^n - 1
+
+fmt.Printf("%b", n)
+
 https://medium.com/@g789872001darren/gogoalgorithm-1-depth-first-search-582eeb58f23a
 n = 3
 a = {2, 5, 8}
