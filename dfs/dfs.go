@@ -54,4 +54,5 @@ func main() {
 	v2.connect(v4, v5) // 4.
 	v3.connect(v4, v5) // 4.
 	g.dfs(v1)
+	g.dfs(v2)
 }
